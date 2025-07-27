@@ -8,6 +8,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 ABasePlayerCharacter::ABasePlayerCharacter()
@@ -24,6 +25,8 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 	CameraComponent->SetupAttachment(SpringArmComponent, USpringArmComponent::SocketName);
 	CameraComponent->bUsePawnControlRotation = false;
 
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
 
 
@@ -75,6 +78,10 @@ void ABasePlayerCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ABasePlayerCharacter::Jump(const FInputActionValue& Value)
+{
+	Super::Jump();
+}
 
 void ABasePlayerCharacter::Tick(float DeltaTime)
 {
@@ -91,6 +98,7 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	{
 		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Look);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Jump);
 	}
 
 }

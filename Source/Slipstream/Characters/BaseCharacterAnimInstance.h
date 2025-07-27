@@ -6,6 +6,8 @@
 #include "Animation/AnimInstance.h"
 #include "BaseCharacterAnimInstance.generated.h"
 
+class ABasePlayerCharacter;
+
 /**
  * 
  */
@@ -17,4 +19,17 @@ class SLIPSTREAM_API UBaseCharacterAnimInstance : public UAnimInstance
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
+
+private:
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<ABasePlayerCharacter> PlayerCharacter;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float Speed;
+	
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	bool bIsInAir;
+	
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	bool bIsAccelerating;
 };
