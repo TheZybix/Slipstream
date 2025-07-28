@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "BasePlayerCharacter.generated.h"
 
+class AWeaponBase;
 class UInputMappingContext;
 class UInputAction;
 class USpringArmComponent;
@@ -24,6 +25,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -55,9 +57,13 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	UWidgetComponent* OverheadWidget;
 
+	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
+	AWeaponBase* OverlappingWeapon;
 
+	UFUNCTION()
+	void OnRep_OverlappingWeapon(AWeaponBase* LastWeapon);
 	
 public:
-
+	void SetOverlappingWeapon(AWeaponBase* Weapon);
 
 };

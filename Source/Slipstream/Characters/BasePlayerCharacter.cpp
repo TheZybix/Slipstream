@@ -10,6 +10,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "Slipstream/Weapon/WeaponBase.h"
 
 
 ABasePlayerCharacter::ABasePlayerCharacter()
@@ -33,7 +35,12 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 	OverheadWidget->SetupAttachment(RootComponent);
 }
 
+void ABasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME_CONDITION(ABasePlayerCharacter, OverlappingWeapon, COND_OwnerOnly);
+}
 
 
 void ABasePlayerCharacter::BeginPlay()
@@ -41,6 +48,11 @@ void ABasePlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	InitializeMappingContext();
+}
+
+void ABasePlayerCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 }
 
 void ABasePlayerCharacter::InitializeMappingContext()
@@ -87,13 +99,6 @@ void ABasePlayerCharacter::Jump(const FInputActionValue& Value)
 	Super::Jump();
 }
 
-void ABasePlayerCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-
 void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -106,3 +111,35 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	}
 
 }
+
+void ABasePlayerCharacter::OnRep_OverlappingWeapon(AWeaponBase* LastWeapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickUpWidget(true);
+	}
+	if (LastWeapon)
+	{
+		OverlappingWeapon->ShowPickUpWidget(false);
+	}
+}
+
+void ABasePlayerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickUpWidget(false);
+	}
+	OverlappingWeapon = Weapon;
+
+	/* Ensure the widget is displayed if the server is also a player*/
+	if (IsLocallyControlled())
+	{
+		if (OverlappingWeapon)
+		{
+			OverlappingWeapon->ShowPickUpWidget(true);
+		}
+	}
+}
+
+
