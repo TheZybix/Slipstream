@@ -11,6 +11,7 @@ class UInputMappingContext;
 class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
+class UWidgetComponent;
 
 UCLASS()
 class SLIPSTREAM_API ABasePlayerCharacter : public ACharacter
@@ -50,6 +51,9 @@ private:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+	UWidgetComponent* OverheadWidget;
 
 
 	
