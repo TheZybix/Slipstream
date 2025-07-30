@@ -36,6 +36,8 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat"));
 	CombatComponent->SetIsReplicated(true);
+
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
 
 void ABasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -125,10 +127,21 @@ void ABasePlayerCharacter::ServerEquipKeyPressed_Implementation()
 	}
 }
 
-void ABasePlayerCharacter::Crouch(const FInputActionValue& Value)
+void ABasePlayerCharacter::CrouchKeyPressed(const FInputActionValue& Value)
 {
-	
+	if (bIsCrouched) UnCrouch();
+	else Crouch();
 }
+
+
+void ABasePlayerCharacter::AimKeyPressed(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->SetAiming(Value.Get<bool>());
+	}
+}
+
 
 void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -140,7 +153,9 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::EquipKeyPressed);
-		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Crouch);
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::CrouchKeyPressed);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::AimKeyPressed);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::AimKeyPressed);
 	}
 
 }
@@ -178,6 +193,11 @@ void ABasePlayerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)
 bool ABasePlayerCharacter::IsWeaponEquipped()
 {
 	return (CombatComponent && CombatComponent->EquippedWeapon);
+}
+
+bool ABasePlayerCharacter::IsAiming()
+{
+	return (CombatComponent && CombatComponent->bAiming);
 }
 
 

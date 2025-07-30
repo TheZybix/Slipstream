@@ -22,12 +22,19 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	void SetAiming(bool bIsAiming);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetAiming(bool bIsAiming);
 
 private:
 	ABasePlayerCharacter* Character;
 
 	UPROPERTY(Replicated)
 	AWeaponBase* EquippedWeapon;
+
+	UPROPERTY(Replicated)
+	bool bAiming;
 
 public:	
 

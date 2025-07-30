@@ -50,6 +50,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = Input)
 	TObjectPtr<UInputAction> CrouchAction;
+
+	UPROPERTY(EditAnywhere, Category = Input)
+	TObjectPtr<UInputAction> AimAction;
 	
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -62,7 +65,8 @@ private:
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
 	void EquipKeyPressed(const FInputActionValue& Value);
-	void Crouch(const FInputActionValue& Value);
+	void CrouchKeyPressed(const FInputActionValue& Value);
+	void AimKeyPressed(const FInputActionValue& Value);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	UWidgetComponent* OverheadWidget;
@@ -82,5 +86,5 @@ private:
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
 	bool IsWeaponEquipped();
-
+	bool IsAiming();
 };
