@@ -17,7 +17,6 @@
 
 ABasePlayerCharacter::ABasePlayerCharacter()
 {
-
 	PrimaryActorTick.bCanEverTick = true;
 
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Component"));
@@ -111,10 +110,24 @@ void ABasePlayerCharacter::Jump(const FInputActionValue& Value)
 
 void ABasePlayerCharacter::EquipKeyPressed(const FInputActionValue& Value)
 {
-	if (CombatComponent && HasAuthority())
+	if (CombatComponent)
+	{
+		if (HasAuthority())	CombatComponent->EquipWeapon(OverlappingWeapon);
+		else ServerEquipKeyPressed();
+	}
+}
+
+void ABasePlayerCharacter::ServerEquipKeyPressed_Implementation()
+{
+	if (CombatComponent)
 	{
 		CombatComponent->EquipWeapon(OverlappingWeapon);
 	}
+}
+
+void ABasePlayerCharacter::Crouch(const FInputActionValue& Value)
+{
+	
 }
 
 void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -127,6 +140,7 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Jump);
 		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::EquipKeyPressed);
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Crouch);
 	}
 
 }
@@ -139,7 +153,7 @@ void ABasePlayerCharacter::OnRep_OverlappingWeapon(AWeaponBase* LastWeapon)
 	}
 	if (LastWeapon)
 	{
-		OverlappingWeapon->ShowPickUpWidget(false);
+		LastWeapon->ShowPickUpWidget(false);
 	}
 }
 
@@ -159,6 +173,11 @@ void ABasePlayerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)
 			OverlappingWeapon->ShowPickUpWidget(true);
 		}
 	}
+}
+
+bool ABasePlayerCharacter::IsWeaponEquipped()
+{
+	return (CombatComponent && CombatComponent->EquippedWeapon);
 }
 
 

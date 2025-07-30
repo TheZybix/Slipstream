@@ -28,6 +28,7 @@ class SLIPSTREAM_API AWeaponBase : public AActor
 public:	
 	AWeaponBase();
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	void ShowPickUpWidget(bool bShowWidget);
 
 protected:
@@ -46,14 +47,18 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
 	USphereComponent* AreaSphere;
 
-	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "WeaponProperties")
 	EWeaponState WeaponState = EWeaponState::EWS_Initial;
 
+	UFUNCTION()
+	void OnRep_WeaponState();
+	
 	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
 	UWidgetComponent* PickupWidget;
 
 public:
-	FORCEINLINE void SetWeaponState(EWeaponState State) {WeaponState = State;}
+	void SetWeaponState(EWeaponState State);
+	FORCEINLINE USphereComponent* GetAreaSphere() {return AreaSphere;}
 
 
 };

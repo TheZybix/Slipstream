@@ -4,6 +4,7 @@
 #include "WeaponBase.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
 
 // Sets default values
@@ -67,9 +68,37 @@ void AWeaponBase::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, A
 	}
 }
 
+void AWeaponBase::SetWeaponState(EWeaponState State)
+{
+	WeaponState = State;
+	switch (WeaponState)
+	{
+	case EWeaponState::EWS_Equipped:
+		ShowPickUpWidget(false);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+	}
+}
+
+void AWeaponBase::OnRep_WeaponState()
+{
+	switch (WeaponState)
+	{
+	case EWeaponState::EWS_Equipped:
+		ShowPickUpWidget(false);
+		break;
+	}
+}
+
 void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(AWeaponBase, WeaponState, COND_OwnerOnly);
 }
 
 void AWeaponBase::ShowPickUpWidget(bool bShowWidget)

@@ -16,6 +16,7 @@ class SLIPSTREAM_API UCombatComponent : public UActorComponent
 public:	
 	UCombatComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	friend class ABasePlayerCharacter;
 	void EquipWeapon(AWeaponBase* WeaponToEquip);
 	
@@ -24,6 +25,8 @@ protected:
 
 private:
 	ABasePlayerCharacter* Character;
+
+	UPROPERTY(Replicated)
 	AWeaponBase* EquippedWeapon;
 
 public:	
