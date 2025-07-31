@@ -33,6 +33,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void AimOffset(float DeltaTime);
+
 	UPROPERTY(EditAnywhere, Category = Input)
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 	
@@ -82,9 +84,17 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipKeyPressed();
+
+	float AO_Yaw;
+	float AO_Pitch;
+	FRotator StartingAimRotation;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
 	bool IsWeaponEquipped();
 	bool IsAiming();
+
+	FORCEINLINE float GetAOYaw() const { return AO_Yaw; }
+	FORCEINLINE float GetAOPitch() const { return AO_Pitch; }
+	AWeaponBase* GetEquippedWeapon();
 };
