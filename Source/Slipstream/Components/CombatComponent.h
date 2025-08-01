@@ -30,6 +30,8 @@ protected:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 
+	void TriggerKeyPressed(bool bPressed);
+
 private:
 	ABasePlayerCharacter* Character;
 
@@ -44,6 +46,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed;
+
+	bool bTriggerKeyPressed;
 
 public:	
 
