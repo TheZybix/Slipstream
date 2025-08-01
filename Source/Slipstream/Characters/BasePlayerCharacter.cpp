@@ -15,6 +15,9 @@
 #include "Net/UnrealNetwork.h"
 #include "Slipstream/Components/CombatComponent.h"
 #include "Slipstream/Weapon/WeaponBase.h"
+#include "BaseCharacterAnimInstance.h"
+#include "SNegativeActionButton.h"
+#include "UniversalObjectLocators/AnimInstanceLocatorFragment.h"
 
 
 ABasePlayerCharacter::ABasePlayerCharacter()
@@ -40,6 +43,7 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 	CombatComponent->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 1000.f);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
@@ -60,6 +64,23 @@ void ABasePlayerCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	if (CombatComponent) CombatComponent->Character = this;
+}
+
+void ABasePlayerCharacter::PlayFireMontage(bool bAiming)
+{
+
+	
+	if (!CombatComponent || !CombatComponent->EquippedWeapon) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && FireWeaponMontage && CombatComponent->bTriggerKeyPressed)
+	{
+		AnimInstance->Montage_Play(FireWeaponMontage);
+		
+		/*FName SectionName;
+		 *SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+		 *AnimInstance->Montage_JumpToSection(SectionName;)*/
+	}
 }
 
 
@@ -114,6 +135,12 @@ void ABasePlayerCharacter::AimOffset(float DeltaTime)
 	}
 }
 
+void ABasePlayerCharacter::Jump()
+{
+	if (bIsCrouched) UnCrouch();
+	else Super::Jump();
+}
+
 void ABasePlayerCharacter::InitializeMappingContext()
 {
 	TObjectPtr<APlayerController> PlayerController = Cast<APlayerController>(GetController());
@@ -153,9 +180,9 @@ void ABasePlayerCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void ABasePlayerCharacter::Jump(const FInputActionValue& Value)
+void ABasePlayerCharacter::JumpKeyPressed(const FInputActionValue& Value)
 {
-	Super::Jump();
+	Jump();
 }
 
 void ABasePlayerCharacter::EquipKeyPressed(const FInputActionValue& Value)
@@ -190,6 +217,14 @@ void ABasePlayerCharacter::AimKeyPressed(const FInputActionValue& Value)
 	}
 }
 
+void ABasePlayerCharacter::TriggerKeyPressed(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->TriggerKeyPressed(Value.Get<bool>());
+	}
+}
+
 
 void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -199,11 +234,13 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	{
 		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Look);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::JumpKeyPressed);
 		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::EquipKeyPressed);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::CrouchKeyPressed);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::AimKeyPressed);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::AimKeyPressed);
+		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::TriggerKeyPressed);
+		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::TriggerKeyPressed);
 	}
 
 }
