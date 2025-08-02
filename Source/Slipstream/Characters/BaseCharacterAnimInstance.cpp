@@ -57,5 +57,18 @@ void UBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		PlayerCharacter->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
 		LeftHandTransform.SetLocation(OutPosition);
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
+
+		if (PlayerCharacter->IsLocallyControlled())
+		{
+			bIsLocallyControlled = true;
+			FTransform RightHandTransform = PlayerCharacter->GetMesh()->GetSocketTransform(FName("hand_r"), RTS_World);
+			RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - PlayerCharacter->GetHitTarget()));
+		}
+		
+		/*DRAW DEBUG LINES FOR AIM ROTATIONS
+		 *FTransform MuzzleTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("muzzle"), RTS_World);
+		FVector MuzzleX(FRotationMatrix(MuzzleTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
+		DrawDebugLine(GetWorld(), MuzzleTransform.GetLocation(), MuzzleTransform.GetLocation() + MuzzleX * 1000.f, FColor::Yellow);
+		DrawDebugLine(GetWorld(), MuzzleTransform.GetLocation(), PlayerCharacter->GetHitTarget(), FColor::Green); */
 	}
 }

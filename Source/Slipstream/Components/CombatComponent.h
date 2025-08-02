@@ -9,6 +9,9 @@
 #define TRACE_LENGTH 80000
 
 class AWeaponBase;
+class ABasePlayerCharacter;
+class ABasePlayerController;
+class ABasePlayerHUD;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SLIPSTREAM_API UCombatComponent : public UActorComponent
@@ -42,8 +45,12 @@ protected:
 
 	void TraceUnderCrosshairs (FHitResult& TraceHitResult);
 
+	void SetHUDCrosshairs(float DeltaTime);
+
 private:
 	ABasePlayerCharacter* Character;
+	ABasePlayerController* PlayerController;
+	ABasePlayerHUD* PlayerHUD;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeaponBase* EquippedWeapon;
@@ -58,6 +65,12 @@ private:
 	float AimWalkSpeed;
 
 	bool bTriggerKeyPressed;
+
+	/* HUD and Crosshairs */
+	float CrosshairVelocityFactor;
+	float CrosshairInAirFactor;
+
+	FVector HitTarget;
 
 public:	
 

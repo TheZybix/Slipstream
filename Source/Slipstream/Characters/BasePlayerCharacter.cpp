@@ -313,4 +313,10 @@ AWeaponBase* ABasePlayerCharacter::GetEquippedWeapon()
 	
 }
 
+FVector ABasePlayerCharacter::GetHitTarget() const
+{
+	if (CombatComponent) return CombatComponent->HitTarget;
+	return FVector();
+}
+
 
