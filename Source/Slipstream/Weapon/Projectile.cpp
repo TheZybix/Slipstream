@@ -32,7 +32,7 @@ void AProjectile::BeginPlay()
 	Super::BeginPlay();
 	if (Tracer)
 	{
-		UGameplayStatics::SpawnEmitterAttached(Tracer, CollisionBox, FName(), GetActorLocation(), GetActorRotation(), EAttachLocation::KeepWorldPosition);
+		TracerComponent = UGameplayStatics::SpawnEmitterAttached(Tracer, CollisionBox, FName(), GetActorLocation(), GetActorRotation(), EAttachLocation::KeepWorldPosition);
 	}
 	if (HasAuthority())
 	{

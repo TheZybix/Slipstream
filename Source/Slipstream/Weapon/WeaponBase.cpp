@@ -2,10 +2,13 @@
 
 
 #include "WeaponBase.h"
+
+#include "BulletSleeve.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -115,9 +118,17 @@ void AWeaponBase::Fire(const FVector& HitTarget)
 	{
 		WeaponMesh->PlayAnimation(FireAnimation, false);
 	}
+	if (BulletSleeveClass)
+	{
+		const USkeletalMeshSocket* AmmoEjectSocket = WeaponMesh->GetSocketByName(FName("AmmoEject"));
+		if (AmmoEjectSocket)
+		{
+			FTransform AmmoEjectTransform = AmmoEjectSocket->GetSocketTransform(WeaponMesh);
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				World->SpawnActor<ABulletSleeve>(BulletSleeveClass, AmmoEjectTransform);
+			}
+		}
+	}
 }
-
-
-
-
-

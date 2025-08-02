@@ -10,6 +10,7 @@ class USkeletalMeshComponent;
 class USphereComponent;
 class UWidgetComponent;
 class UAnimationAsset;
+class ABulletSleeve;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -60,6 +61,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	UAnimationAsset* FireAnimation;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ABulletSleeve> BulletSleeveClass;
 
 public:
 	void SetWeaponState(EWeaponState State);
