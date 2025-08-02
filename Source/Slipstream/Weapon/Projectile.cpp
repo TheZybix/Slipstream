@@ -40,26 +40,26 @@ void AProjectile::BeginPlay()
 	}
 }
 
-void AProjectile::Destroyed()
+void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+                        FVector NormalImpulse, const FHitResult& Hit)
 {
-	Super::Destroyed();
+	MulticastHit();
+}
 
+void AProjectile::MulticastHit_Implementation()
+{
 	if (ImpactParticles && ImpactSound)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, GetActorLocation());
 	}
+	if (HasAuthority()) Destroy();
 }
 
-void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-                        FVector NormalImpulse, const FHitResult& Hit)
-{
-	Destroy();
-}
+
 
 void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 

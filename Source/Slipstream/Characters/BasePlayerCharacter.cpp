@@ -68,12 +68,10 @@ void ABasePlayerCharacter::PostInitializeComponents()
 
 void ABasePlayerCharacter::PlayFireMontage(bool bAiming)
 {
-
-	
 	if (!CombatComponent || !CombatComponent->EquippedWeapon) return;
-
+	
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && FireWeaponMontage && CombatComponent->bTriggerKeyPressed)
+	if (AnimInstance && FireWeaponMontage)
 	{
 		AnimInstance->Montage_Play(FireWeaponMontage);
 		

@@ -22,7 +22,9 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void Destroyed() override;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastHit();
 
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -49,3 +51,5 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 };
+
+
