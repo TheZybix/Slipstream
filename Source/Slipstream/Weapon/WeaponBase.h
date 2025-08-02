@@ -11,6 +11,7 @@ class USphereComponent;
 class UWidgetComponent;
 class UAnimationAsset;
 class ABulletSleeve;
+class UTexture2D;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -64,6 +65,22 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ABulletSleeve> BulletSleeveClass;
+
+	/* Textures for Weaponcrosshairs */
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsCenter;
+	
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsLeft;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsRight;
+	
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsTop;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsBottom;
 
 public:
 	void SetWeaponState(EWeaponState State);

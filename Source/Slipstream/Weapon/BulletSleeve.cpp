@@ -4,7 +4,6 @@
 #include "BulletSleeve.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "Sound/SoundCue.h"
 
 ABulletSleeve::ABulletSleeve()
 {
@@ -27,8 +26,6 @@ void ABulletSleeve::BeginPlay()
 	Super::BeginPlay();
 	SleeveMesh->AddImpulse(GetActorRightVector() * EjectionImpulse);
 	SleeveMesh->OnComponentHit.AddDynamic(this, &ABulletSleeve::OnHit);
-	FRotator SpawnRotation = FRotator(FMath::RandRange(0, 360), FMath::RandRange(0, 360), FMath::RandRange(0, 360));
-	SetActorRotation(SpawnRotation);
 }
 
 void ABulletSleeve::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
