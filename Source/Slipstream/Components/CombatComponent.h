@@ -35,6 +35,7 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+	void Fire();
 
 	void TriggerKeyPressed(bool bPressed);
 
@@ -72,6 +73,8 @@ private:
 	float CrosshairInAirFactor;
 	float CrosshairAimFactor;
 	float CrosshairShootingFactor;
+	float CrosshairTargetFactor;
+	bool bIsTargeting;
 	
 	FHUDPackage HUDPackage;
 	FVector HitTarget;
@@ -87,7 +90,14 @@ private:
 	float ZoomedInterpSpeed = 20.f;
 
 	void InterpolateFOV(float DeltaTime);
+
+	/* Automatic fire */
+	FTimerHandle FireTimer;
 	
+	bool bCanFIre = true;
+
+	void StartFireTimer();
+	void FireTimerFinished();
 
 public:	
 

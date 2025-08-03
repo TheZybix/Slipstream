@@ -4,7 +4,6 @@
 #include "BasePlayerCharacter.h"
 
 #include "Camera/CameraComponent.h"
-#include "GameFramework/InputSettings.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -16,9 +15,7 @@
 #include "Slipstream/Components/CombatComponent.h"
 #include "Slipstream/Weapon/WeaponBase.h"
 #include "BaseCharacterAnimInstance.h"
-#include "SNegativeActionButton.h"
-#include "UniversalObjectLocators/AnimInstanceLocatorFragment.h"
-
+#include "Slipstream/Slipstream.h"
 
 ABasePlayerCharacter::ABasePlayerCharacter()
 {
@@ -45,8 +42,11 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 1000.f);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+
+	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 
@@ -59,6 +59,13 @@ void ABasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ABasePlayerCharacter, OverlappingWeapon, COND_OwnerOnly);
+}
+
+void ABasePlayerCharacter::OnRep_ReplicatedMovement()
+{
+	Super::OnRep_ReplicatedMovement();
+	SimProxiesTurn();
+	TimeSinceLastMovementReplication = 0.f;
 }
 
 void ABasePlayerCharacter::PostInitializeComponents()
@@ -82,6 +89,21 @@ void ABasePlayerCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void ABasePlayerCharacter::PlayHitReactMontage()
+{
+	if (!CombatComponent || !CombatComponent->EquippedWeapon) return;
+	
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+		
+		FName SectionName = FName("FromFront");
+		/*SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");*/
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
 
 void ABasePlayerCharacter::BeginPlay()
 {
@@ -93,7 +115,13 @@ void ABasePlayerCharacter::BeginPlay()
 void ABasePlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	AimOffset(DeltaTime);
+	if (GetLocalRole() > ROLE_SimulatedProxy && IsLocallyControlled()) AimOffset(DeltaTime);
+	else
+	{
+		TimeSinceLastMovementReplication += DeltaTime;
+		if (TimeSinceLastMovementReplication > 0.25f) OnRep_ReplicatedMovement();
+		CalculateAO_Pitch();
+	}
 	HideCameraIfCharacterClose();
 }
 
@@ -119,16 +147,27 @@ void ABasePlayerCharacter::HideCameraIfCharacterClose()
 	}
 }
 
+void ABasePlayerCharacter::CalculateAO_Pitch()
+{
+	AO_Pitch = GetBaseAimRotation().Pitch;
+	if (AO_Pitch > 90.f && !IsLocallyControlled())
+	{
+		/* Correct pitch for multiplayer replication, as during compression the server doesn't use negative numbers for pitch below 0. */
+		FVector2D InRange(270.f, 360.f);
+		FVector2D OutRange(-90.f, 0.f);
+		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+	}
+}
+
 void ABasePlayerCharacter::AimOffset(float DeltaTime)
 {
 	if (CombatComponent && CombatComponent->EquippedWeapon == nullptr) return;
-	FVector Velocity = GetVelocity();
-	Velocity.Z = 0.f;
-	float Speed = Velocity.Size();
+	float Speed = CalculateSpeed();
 	bool bIsInAir = GetCharacterMovement()->IsFalling();
 
 	if (Speed == 0.f && !bIsInAir)
 	{
+		bRotateRootBone = true;
 		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
 		AO_Yaw = DeltaAimRotation.Yaw;
@@ -141,20 +180,53 @@ void ABasePlayerCharacter::AimOffset(float DeltaTime)
 	}
 	if (Speed > 0.f || bIsInAir)
 	{
+		bRotateRootBone = false;
 		StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		AO_Yaw = 0.f;
 		bUseControllerRotationYaw = true;
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	}
 	
-	AO_Pitch = GetBaseAimRotation().Pitch;
-	if (AO_Pitch > 90.f && !IsLocallyControlled())
+	CalculateAO_Pitch();
+}
+
+void ABasePlayerCharacter::SimProxiesTurn()
+{
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) return;
+	bRotateRootBone = false;
+	float Speed = CalculateSpeed();
+	if (Speed > 0.f)
 	{
-		/* Correct pitch for multiplayer replication, as during compression the server doesn't use negative numbers for pitch below 0. */
-		FVector2D InRange(270.f, 360.f);
-		FVector2D OutRange(-90.f, 0.f);
-		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;		
 	}
+	
+	ProxyRotationLastFrame = ProxyRotation;
+	ProxyRotation = GetActorRotation();
+	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
+
+	if (FMath::Abs(ProxyYaw) > TurnThreshold)
+	{
+		if (ProxyYaw > TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_TurningRight;
+		}
+		else if (ProxyYaw < -TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_TurningLeft;
+		}
+		else TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
+	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+}
+
+float ABasePlayerCharacter::CalculateSpeed()
+{
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	float Speed = Velocity.Size();
+	return Speed;
 }
 
 void ABasePlayerCharacter::Jump()
@@ -261,7 +333,7 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::CrouchKeyPressed);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::AimKeyPressed);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::AimKeyPressed);
-		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::TriggerKeyPressed);
+		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Started, this, &ABasePlayerCharacter::TriggerKeyPressed);
 		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::TriggerKeyPressed);
 	}
 
@@ -343,4 +415,7 @@ FVector ABasePlayerCharacter::GetHitTarget() const
 	return FVector();
 }
 
-
+void ABasePlayerCharacter::MulticastHit_Implementation()
+{
+	PlayHitReactMontage();
+}
