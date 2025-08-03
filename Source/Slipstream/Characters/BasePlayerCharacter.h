@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Slipstream/Types/TurningInPlace.h"
+#include "Slipstream/Interfaces/InteractWithCrosshairsInterface.h"
 #include "BasePlayerCharacter.generated.h"
 
 class UCombatComponent;
@@ -17,7 +18,7 @@ class UCameraComponent;
 class UWidgetComponent;
 
 UCLASS()
-class SLIPSTREAM_API ABasePlayerCharacter : public ACharacter
+class SLIPSTREAM_API ABasePlayerCharacter : public ACharacter, public IInteractWithCrosshairsInterface
 {
 	GENERATED_BODY()
 
