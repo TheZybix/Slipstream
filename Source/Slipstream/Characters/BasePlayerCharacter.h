@@ -116,7 +116,7 @@ private:
 	void HideCameraIfCharacterClose();
 	void CalculateAO_Pitch();
 
-	UPROPERTY(EditAnywhere, Category = "Camrea")
+	UPROPERTY(EditAnywhere, Category = "Camera")
 	float HideCameraThreshold = 20.f;
 
 	bool bRotateRootBone;
@@ -126,6 +126,16 @@ private:
 	float ProxyYaw;
 	float TimeSinceLastMovementReplication;
 	float CalculateSpeed();
+
+	/* Player health */
+	UPROPERTY(EditAnywhere, Category = "PlayerStats")
+	float MaxHealth = 100.f;
+	
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "PlayerStats")
+	float Health = 100.f;
+
+	UFUNCTION()
+	void OnRep_Health();
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
