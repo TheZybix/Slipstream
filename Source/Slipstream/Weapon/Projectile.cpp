@@ -51,14 +51,16 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 	{
 		Character->MulticastHit();
 	}
+	
+	ImpactParticle = Character ? ImpactParticlesCharacter : ImpactParticlesEnvironment;
 	MulticastHit();
 }
 
 void AProjectile::MulticastHit_Implementation()
 {
-	if (ImpactParticles && ImpactSound)
+	if (ImpactParticle && ImpactSound)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorTransform());
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, GetActorLocation());
 	}
 	if (HasAuthority()) Destroy();
