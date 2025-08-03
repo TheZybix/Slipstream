@@ -94,6 +94,29 @@ void ABasePlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	AimOffset(DeltaTime);
+	HideCameraIfCharacterClose();
+}
+
+
+void ABasePlayerCharacter::HideCameraIfCharacterClose()
+{
+	if (!IsLocallyControlled()) return;
+	if ((CameraComponent->GetComponentLocation() - GetActorLocation()).Size() < HideCameraThreshold)
+	{
+		GetMesh()->SetVisibility(false);
+		if (CombatComponent && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh())
+		{
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
+	}
+	else
+	{
+		GetMesh()->SetVisibility(true);
+		if (CombatComponent && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh())
+		{
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+	}
 }
 
 void ABasePlayerCharacter::AimOffset(float DeltaTime)
