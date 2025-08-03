@@ -59,6 +59,7 @@ void ABasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ABasePlayerCharacter, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(ABasePlayerCharacter, Health);
 }
 
 void ABasePlayerCharacter::OnRep_ReplicatedMovement()
@@ -371,6 +372,11 @@ void ABasePlayerCharacter::TurnInPlace(float DeltaTime)
 			StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		}
 	}
+}
+
+void ABasePlayerCharacter::OnRep_Health()
+{
+	
 }
 
 void ABasePlayerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)

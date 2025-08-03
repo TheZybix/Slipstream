@@ -6,6 +6,9 @@
 #include "GameFramework/HUD.h"
 #include "BasePlayerHUD.generated.h"
 
+class UCharacterOverlay;
+class UUserWidget;
+
 USTRUCT(BlueprintType)
 struct FHUDPackage
 {
@@ -30,6 +33,14 @@ class SLIPSTREAM_API ABasePlayerHUD : public AHUD
 
 public:
 	virtual void DrawHUD() override;
+
+	UPROPERTY(EditAnywhere, Category = "PlayerStats")
+	TSubclassOf<UUserWidget> CharacterOverlayClass;
+	UCharacterOverlay* CharacterOverlay;
+
+protected:
+	virtual void BeginPlay() override;
+	void AddCharacterOverlay();
 
 private:
 	FHUDPackage HUDPackage;
