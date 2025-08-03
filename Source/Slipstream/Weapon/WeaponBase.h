@@ -79,11 +79,24 @@ private:
 	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	UAnimationAsset* FireAnimation;
 
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
+	float WeaponSpread = 0.75f;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ABulletSleeve> BulletSleeveClass;
 
+	/* Zoomed FOV while aiming */
+	UPROPERTY(EditAnywhere)
+	float ZoomedFOV = 30.f;
+
+	UPROPERTY(EditAnywhere)
+	float ZoomInterpSpeed = 20.f;
+	
 public:
 	void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetAreaSphere() {return AreaSphere;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const {return WeaponMesh;}
+	FORCEINLINE float GetZoomedFOV() const {return ZoomedFOV;}
+	FORCEINLINE float GetZoomInterpSpeed() const {return ZoomInterpSpeed;}
+	FORCEINLINE float GetWeaponBulletSpread() const { return WeaponSpread;}
 };
