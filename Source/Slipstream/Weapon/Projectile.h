@@ -24,10 +24,15 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastHit();
+	void MulticastHit(UParticleSystem* ImpactParticle);
 
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	UPROPERTY(EditAnywhere)
+	float Damage;
+
+
 
 private:
 	UPROPERTY(EditAnywhere)
@@ -46,15 +51,11 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticlesCharacter;
-
-	UPROPERTY()
-	UParticleSystem* ImpactParticle;
-
+	
 	UPROPERTY(EditAnywhere)
 	USoundCue* ImpactSound;
-	
+
 public:	
-	virtual void Tick(float DeltaTime) override;
 
 };
 

@@ -16,6 +16,7 @@ class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
 class UWidgetComponent;
+class ABasePlayerController;
 
 UCLASS()
 class SLIPSTREAM_API ABasePlayerCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -33,8 +34,6 @@ public:
 	virtual void PostInitializeComponents() override;
 	void PlayFireMontage(bool bAiming);
 
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit();
 
 protected:
 	// Called when the game starts or when spawned
@@ -44,6 +43,10 @@ protected:
 	void SimProxiesTurn();
 	virtual void Jump() override;
 	void PlayHitReactMontage();
+
+	UFUNCTION()
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+	void UpdateHUDHealth();
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	TObjectPtr<UInputMappingContext> InputMappingContext;
@@ -133,6 +136,9 @@ private:
 	
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "PlayerStats")
 	float Health = 100.f;
+
+	UPROPERTY()
+	ABasePlayerController* PlayerController;
 
 	UFUNCTION()
 	void OnRep_Health();

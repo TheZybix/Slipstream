@@ -16,6 +16,7 @@
 #include "Slipstream/Weapon/WeaponBase.h"
 #include "BaseCharacterAnimInstance.h"
 #include "Slipstream/Slipstream.h"
+#include "Slipstream/PlayerController/BasePlayerController.h"
 
 ABasePlayerCharacter::ABasePlayerCharacter()
 {
@@ -105,12 +106,34 @@ void ABasePlayerCharacter::PlayHitReactMontage()
 	}
 }
 
+void ABasePlayerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
+	AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+}
+
+
+void ABasePlayerCharacter::UpdateHUDHealth()
+{
+	PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
+	if (PlayerController)
+	{
+		PlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
 
 void ABasePlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
 	InitializeMappingContext();
+	UpdateHUDHealth();
+	if (HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this, &ABasePlayerCharacter::ReceiveDamage);
+	}
 }
 
 void ABasePlayerCharacter::Tick(float DeltaTime)
@@ -238,10 +261,10 @@ void ABasePlayerCharacter::Jump()
 
 void ABasePlayerCharacter::InitializeMappingContext()
 {
-	TObjectPtr<APlayerController> PlayerController = Cast<APlayerController>(GetController());
-	if (PlayerController)
+	TObjectPtr<APlayerController> PlayerControllerInput = Cast<APlayerController>(GetController());
+	if (PlayerControllerInput)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerControllerInput->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(InputMappingContext, 0);
 		}
@@ -314,7 +337,7 @@ void ABasePlayerCharacter::AimKeyPressed(const FInputActionValue& Value)
 
 void ABasePlayerCharacter::TriggerKeyPressed(const FInputActionValue& Value)
 {
-	if (CombatComponent)
+	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
 		CombatComponent->TriggerKeyPressed(Value.Get<bool>());
 	}
@@ -376,7 +399,8 @@ void ABasePlayerCharacter::TurnInPlace(float DeltaTime)
 
 void ABasePlayerCharacter::OnRep_Health()
 {
-	
+	UpdateHUDHealth();
+	PlayHitReactMontage();
 }
 
 void ABasePlayerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)
@@ -419,9 +443,4 @@ FVector ABasePlayerCharacter::GetHitTarget() const
 {
 	if (CombatComponent) return CombatComponent->HitTarget;
 	return FVector();
-}
-
-void ABasePlayerCharacter::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
 }

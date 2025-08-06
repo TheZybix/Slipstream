@@ -47,29 +47,20 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
                         FVector NormalImpulse, const FHitResult& Hit)
 {
 	ABasePlayerCharacter* Character = Cast<ABasePlayerCharacter>(OtherActor);
-	if (Character)
-	{
-		Character->MulticastHit();
-	}
-	
-	ImpactParticle = Character ? ImpactParticlesCharacter : ImpactParticlesEnvironment;
-	MulticastHit();
+	MulticastHit(Character ? ImpactParticlesCharacter : ImpactParticlesEnvironment);
 }
 
-void AProjectile::MulticastHit_Implementation()
+void AProjectile::MulticastHit_Implementation(UParticleSystem* ImpactParticle)
 {
-	if (ImpactParticle && ImpactSound)
+	if (ImpactParticle)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("MulticastHit called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorTransform());
+	}
+	if (ImpactSound)
+	{
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, GetActorLocation());
 	}
 	if (HasAuthority()) Destroy();
-}
-
-
-
-void AProjectile::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
