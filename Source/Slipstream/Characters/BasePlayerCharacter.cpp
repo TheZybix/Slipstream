@@ -56,6 +56,8 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 
 	NetUpdateFrequency = 66.0f;
 	MinNetUpdateFrequency = 3.0f;
+
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Dissolve Timeline"));
 }
 
 void ABasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -113,6 +115,22 @@ void ABasePlayerCharacter::MulticastElim_Implementation()
 {
 	bIsDead = true;
 	PlayDeathMontage();
+	
+	InitializeMaterials();
+	for (int32 Selection = 0; Selection < DissolveMaterials.Num(); Selection++)
+	{
+		if (DissolveMaterials[Selection])
+		{
+			UMaterialInstanceDynamic* DynamicMaterial = UMaterialInstanceDynamic::Create(DissolveMaterials[Selection], this);
+			DynamicDissolveMaterials.Add(DynamicMaterial);
+			int32 Slot = GetMesh()->GetMaterialIndex(MaterialSlots[Selection]);
+			GetMesh()->SetMaterial(Slot, DynamicDissolveMaterials[Selection]);
+			DynamicDissolveMaterials[Selection]->SetScalarParameterValue("DissolveAmount", -0.5f);
+			DynamicDissolveMaterials[Selection]->SetScalarParameterValue("GlowAmount", 150.f);
+			UE_LOG(LogTemp, Warning, TEXT("Updating Material Slot %d: %s"), Selection, *DynamicDissolveMaterials[Selection]->GetName());
+		}
+	}
+	StartDissolve();
 }
 
 void ABasePlayerCharacter::ElimTimerFinished()
@@ -165,6 +183,52 @@ void ABasePlayerCharacter::UpdateHUDHealth()
 	if (PlayerController)
 	{
 		PlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void ABasePlayerCharacter::InitializeMaterials()
+{
+	if (DissolveHeadSkin)
+	{
+		DissolveMaterials.Add(DissolveHeadSkin);
+		MaterialSlots.Add(FName("MI_HeadSkin"));
+	}
+
+	if (DissolveGloves) 
+	{
+		DissolveMaterials.Add(DissolveGloves);
+		MaterialSlots.Add(FName("MI_Gloves"));
+	}
+	if (DissolveBodySkin) 
+	{
+		DissolveMaterials.Add(DissolveBodySkin);
+		MaterialSlots.Add(FName("MI_BodySkin"));
+	}
+	if (DissolveBikini) 
+	{
+		DissolveMaterials.Add(DissolveBikini);
+		MaterialSlots.Add(FName("MI_Bikini"));
+	}
+	if (DissolveShirts) 
+	{
+		DissolveMaterials.Add(DissolveShirts);
+		MaterialSlots.Add(FName("MI_Shirts"));
+	}
+	if (DissolvePants) 
+	{
+		DissolveMaterials.Add(DissolvePants);
+		MaterialSlots.Add(FName("MI_Pants"));
+
+	}
+	if (DissolvePants) 
+	{
+		DissolveMaterials.Add(DissolvePants);
+		MaterialSlots.Add(FName("MI_Pants_Cloth"));
+	}
+	if (DissolveShoes) 
+	{
+		DissolveMaterials.Add(DissolveShoes);
+		MaterialSlots.Add(FName("MI_Shoes"));
 	}
 }
 
@@ -449,13 +513,20 @@ void ABasePlayerCharacter::OnRep_Health()
 
 void ABasePlayerCharacter::UpdateDissolveMaterial(float DissolveValue)
 {
-	
+	for (int32 Selection = 0; Selection < DynamicDissolveMaterials.Num(); Selection++)
+	{
+		if (DynamicDissolveMaterials[Selection])
+		{
+			DynamicDissolveMaterials[Selection]->SetScalarParameterValue("DissolveAmount", DissolveValue);
+
+		}
+	}
 }
 
 void ABasePlayerCharacter::StartDissolve()
 {
 	DissolveTrack.BindDynamic(this, &ABasePlayerCharacter::UpdateDissolveMaterial);
-	if (DissolveCurve)
+	if (DissolveCurve && DissolveTimeline)
 	{
 		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
 		DissolveTimeline->Play();

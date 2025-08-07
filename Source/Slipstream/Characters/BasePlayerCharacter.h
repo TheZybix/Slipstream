@@ -53,6 +53,7 @@ protected:
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 	void UpdateHUDHealth();
+	void InitializeMaterials();
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	TObjectPtr<UInputMappingContext> InputMappingContext;
@@ -170,6 +171,58 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	UCurveFloat* DissolveCurve;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dissolve")
+	UMaterialInstanceDynamic* DynamicDissolveHeadSkin;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dissolve")
+	UMaterialInstanceDynamic* DynamicDissolveGloves;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dissolve")
+	UMaterialInstanceDynamic* DynamicDissolveBodySkin;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dissolve")
+	UMaterialInstanceDynamic* DynamicDissolveBikini;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dissolve")
+	UMaterialInstanceDynamic* DynamicDissolveShirts;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dissolve")
+	UMaterialInstanceDynamic* DynamicDissolvePants;
+
+	UPROPERTY(VisibleAnywhere, Category = "Dissolve")
+	UMaterialInstanceDynamic* DynamicDissolveShoes;
+	
+	UPROPERTY()
+	TArray<UMaterialInstanceDynamic*> DynamicDissolveMaterials;
+	
+
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	UMaterialInstance* DissolveHeadSkin;
+
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	UMaterialInstance* DissolveGloves;
+
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	UMaterialInstance* DissolveBodySkin;
+
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	UMaterialInstance* DissolveBikini;
+
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	UMaterialInstance* DissolveShirts;
+
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	UMaterialInstance* DissolvePants;
+
+	UPROPERTY(EditAnywhere, Category = "Dissolve")
+	UMaterialInstance* DissolveShoes;
+
+	UPROPERTY()
+	TArray<UMaterialInstance*> DissolveMaterials;
+
+	UPROPERTY()
+	TArray<FName> MaterialSlots;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);

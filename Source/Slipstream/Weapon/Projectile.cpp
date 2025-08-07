@@ -54,7 +54,6 @@ void AProjectile::MulticastHit_Implementation(UParticleSystem* ImpactParticle)
 {
 	if (ImpactParticle)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MulticastHit called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorTransform());
 	}
 	if (ImpactSound)
