@@ -109,13 +109,18 @@ void ABasePlayerCharacter::Elim()
 {
 	MulticastElim();
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABasePlayerCharacter::ElimTimerFinished, ElimDelay);
+	if (CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		CombatComponent->EquippedWeapon->Dropped();
+	}
 }
 
 void ABasePlayerCharacter::MulticastElim_Implementation()
 {
 	bIsDead = true;
 	PlayDeathMontage();
-	
+
+	/* Dissolve character */
 	InitializeMaterials();
 	for (int32 Selection = 0; Selection < DissolveMaterials.Num(); Selection++)
 	{
@@ -131,6 +136,17 @@ void ABasePlayerCharacter::MulticastElim_Implementation()
 		}
 	}
 	StartDissolve();
+
+	/* Disable character movement */
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+	if (PlayerController)
+	{
+		DisableInput(PlayerController);
+	}
+	/* Disable collision */
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ABasePlayerCharacter::ElimTimerFinished()
