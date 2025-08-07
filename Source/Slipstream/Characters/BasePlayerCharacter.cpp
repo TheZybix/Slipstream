@@ -16,7 +16,9 @@
 #include "Slipstream/Weapon/WeaponBase.h"
 #include "BaseCharacterAnimInstance.h"
 #include "Slipstream/Slipstream.h"
+#include "Slipstream/GameModes/SlipstreamGameMode.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
+#include "TimerManager.h"
 
 ABasePlayerCharacter::ABasePlayerCharacter()
 {
@@ -48,7 +50,8 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
-
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 
 	NetUpdateFrequency = 66.0f;
@@ -91,6 +94,36 @@ void ABasePlayerCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void ABasePlayerCharacter::PlayDeathMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+	}
+}
+
+void ABasePlayerCharacter::Elim()
+{
+	MulticastElim();
+	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABasePlayerCharacter::ElimTimerFinished, ElimDelay);
+}
+
+void ABasePlayerCharacter::MulticastElim_Implementation()
+{
+	bIsDead = true;
+	PlayDeathMontage();
+}
+
+void ABasePlayerCharacter::ElimTimerFinished()
+{
+	ASlipstreamGameMode* GameMode = GetWorld()->GetAuthGameMode<ASlipstreamGameMode>();
+	if (GameMode)
+	{
+		GameMode->RequestRespawn(this, Controller);
+	}
+}
+
 void ABasePlayerCharacter::PlayHitReactMontage()
 {
 	if (!CombatComponent || !CombatComponent->EquippedWeapon) return;
@@ -112,6 +145,17 @@ void ABasePlayerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, con
 	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
 	UpdateHUDHealth();
 	PlayHitReactMontage();
+
+	if (Health == 0.f)
+	{
+		ASlipstreamGameMode* SlipstreamGameMode = GetWorld()->GetAuthGameMode<ASlipstreamGameMode>();
+		if (SlipstreamGameMode)
+		{
+			PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
+			ABasePlayerController* AttackerController = Cast<ABasePlayerController>(InstigatorController);
+			SlipstreamGameMode->PlayerEliminated(this, PlayerController, AttackerController);
+		}
+	}
 }
 
 
@@ -401,6 +445,21 @@ void ABasePlayerCharacter::OnRep_Health()
 {
 	UpdateHUDHealth();
 	PlayHitReactMontage();
+}
+
+void ABasePlayerCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	
+}
+
+void ABasePlayerCharacter::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this, &ABasePlayerCharacter::UpdateDissolveMaterial);
+	if (DissolveCurve)
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
+	}
 }
 
 void ABasePlayerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)

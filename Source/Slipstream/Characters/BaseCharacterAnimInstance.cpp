@@ -50,6 +50,8 @@ void UBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	AO_Yaw = PlayerCharacter->GetAOYaw();
 	AO_Pitch = PlayerCharacter->GetAOPitch();
 
+	bIsDead = PlayerCharacter->IsDead();
+
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && PlayerCharacter->GetMesh())
 	{
 		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), RTS_World);

@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "Slipstream/Types/TurningInPlace.h"
 #include "Slipstream/Interfaces/InteractWithCrosshairsInterface.h"
+#include "Components/TimelineComponent.h"
 #include "BasePlayerCharacter.generated.h"
 
 class UCombatComponent;
@@ -33,6 +34,11 @@ public:
 	virtual void OnRep_ReplicatedMovement() override;
 	virtual void PostInitializeComponents() override;
 	void PlayFireMontage(bool bAiming);
+	void PlayDeathMontage();
+
+	void Elim();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastElim();
 
 
 protected:
@@ -116,6 +122,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* HitReactMontage;
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* DeathMontage;
+
 	void HideCameraIfCharacterClose();
 	void CalculateAO_Pitch();
 
@@ -142,6 +151,25 @@ private:
 
 	UFUNCTION()
 	void OnRep_Health();
+
+	bool bIsDead = false;
+
+	FTimerHandle ElimTimer;
+	UPROPERTY(EditDefaultsOnly)
+	float ElimDelay = 3.f;
+	void ElimTimerFinished();
+
+	/* DissolveEffect */
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* DissolveTimeline;
+	FOnTimelineFloat DissolveTrack;
+
+	UFUNCTION()
+	void UpdateDissolveMaterial(float DissolveValue);
+	void StartDissolve();
+	
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* DissolveCurve;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
@@ -157,6 +185,7 @@ public:
 
 	FORCEINLINE UCameraComponent* GetCameraComponent() const { return CameraComponent; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
+	FORCEINLINE bool IsDead() const { return bIsDead; }
 };
 
 
