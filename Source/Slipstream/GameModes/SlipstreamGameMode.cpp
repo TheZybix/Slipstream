@@ -7,11 +7,20 @@
 #include "Kismet/GameplayStatics.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
+#include "Slipstream/PlayerState/BasePlayerState.h"
 
 void ASlipstreamGameMode::PlayerEliminated(ABasePlayerCharacter* EliminatedPlayer,
 	ABasePlayerController* EliminatedPlayerController, ABasePlayerController* AttackerPlayerController)
 {
-	EliminatedPlayer->Elim();
+	ABasePlayerState* AttackerPlayerState = AttackerPlayerController ? Cast<ABasePlayerState>(AttackerPlayerController->PlayerState) : nullptr;
+	ABasePlayerState* EliminatedPlayerState = EliminatedPlayerController ? Cast<ABasePlayerState>(EliminatedPlayerController->PlayerState) : nullptr;
+
+	if (AttackerPlayerState && AttackerPlayerState != EliminatedPlayerState)
+	{
+		AttackerPlayerState->AddToScore(1.f);
+	}
+	
+	if (EliminatedPlayer) EliminatedPlayer->Elim();
 }
 
 void ASlipstreamGameMode::RequestRespawn(ACharacter* EliminatedPlayer, AController* EliminatedPlayerController)

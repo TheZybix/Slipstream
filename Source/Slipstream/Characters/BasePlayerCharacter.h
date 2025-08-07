@@ -18,6 +18,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UWidgetComponent;
 class ABasePlayerController;
+class ABasePlayerState;
 
 UCLASS()
 class SLIPSTREAM_API ABasePlayerCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -27,6 +28,8 @@ class SLIPSTREAM_API ABasePlayerCharacter : public ACharacter, public IInteractW
 public:
 	ABasePlayerCharacter();
 	void InitializeMappingContext();
+
+	virtual void Destroyed() override;
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -39,6 +42,8 @@ public:
 	void Elim();
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastElim();
+
+	ABasePlayerState* PlayerState;
 
 
 protected:
@@ -53,6 +58,10 @@ protected:
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 	void UpdateHUDHealth();
+	
+	/* Poll for any relevant classes and initialize HUD */
+	void PollInit();
+
 	void InitializeMaterials();
 
 	UPROPERTY(EditAnywhere, Category = Input)
@@ -223,6 +232,16 @@ private:
 
 	UPROPERTY()
 	TArray<FName> MaterialSlots;
+
+	/* Elimimination effect */
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* EliminationBotParticles;
+
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent* EliminationBotParticlesComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* EliminationBotSound;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
@@ -239,6 +258,9 @@ public:
 	FORCEINLINE UCameraComponent* GetCameraComponent() const { return CameraComponent; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsDead() const { return bIsDead; }
+
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 };
 
 

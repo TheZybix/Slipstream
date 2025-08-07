@@ -19,6 +19,9 @@
 #include "Slipstream/GameModes/SlipstreamGameMode.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Slipstream/PlayerState/BasePlayerState.h"
 
 ABasePlayerCharacter::ABasePlayerCharacter()
 {
@@ -147,6 +150,17 @@ void ABasePlayerCharacter::MulticastElim_Implementation()
 	/* Disable collision */
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	/* Spawn elimination bot */
+	if (EliminationBotParticles)
+	{
+		FVector SpawnPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.f);
+		EliminationBotParticlesComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EliminationBotParticles, SpawnPoint, GetActorRotation());
+	}
+	if (EliminationBotSound)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(this, EliminationBotSound, GetActorLocation());
+	}
 }
 
 void ABasePlayerCharacter::ElimTimerFinished()
@@ -199,6 +213,18 @@ void ABasePlayerCharacter::UpdateHUDHealth()
 	if (PlayerController)
 	{
 		PlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void ABasePlayerCharacter::PollInit()
+{
+	if (PlayerState == nullptr)
+	{
+		PlayerState = GetPlayerState<ABasePlayerState>();
+		if (PlayerState)
+		{
+			PlayerState->AddToScore(0.f);
+		}
 	}
 }
 
@@ -271,6 +297,7 @@ void ABasePlayerCharacter::Tick(float DeltaTime)
 		CalculateAO_Pitch();
 	}
 	HideCameraIfCharacterClose();
+	PollInit();
 }
 
 
@@ -392,6 +419,15 @@ void ABasePlayerCharacter::InitializeMappingContext()
 		{
 			Subsystem->AddMappingContext(InputMappingContext, 0);
 		}
+	}
+}
+
+void ABasePlayerCharacter::Destroyed()
+{
+	Super::Destroyed();
+	if (EliminationBotParticlesComponent)
+	{
+		EliminationBotParticlesComponent->DestroyComponent();
 	}
 }
 
