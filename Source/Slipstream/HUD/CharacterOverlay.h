@@ -30,5 +30,8 @@ public:
 	UTextBlock* DefeatAmount;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* AmmoAmount;
+
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* EliminationText;
 };

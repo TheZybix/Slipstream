@@ -120,6 +120,10 @@ void ABasePlayerCharacter::Elim()
 
 void ABasePlayerCharacter::MulticastElim_Implementation()
 {
+	if (PlayerController)
+	{
+		PlayerController->SetHUDWeaponAmmo(0);
+	}
 	bIsDead = true;
 	PlayDeathMontage();
 

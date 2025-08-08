@@ -9,6 +9,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Slipstream/PlayerController/BasePlayerController.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -71,6 +72,30 @@ void AWeaponBase::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, A
 	}
 }
 
+void AWeaponBase::SetHUDAmmo()
+{
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter)
+	{
+		OwnerController = OwnerController == nullptr ? Cast<ABasePlayerController>(OwnerCharacter->Controller) : OwnerController;
+		if (OwnerController)
+		{
+			OwnerController->SetHUDWeaponAmmo(Ammo);
+		}
+	}
+}
+
+void AWeaponBase::SpendRound()
+{
+	--Ammo;
+	SetHUDAmmo();
+}
+
+void AWeaponBase::OnRep_Ammo()
+{
+	SetHUDAmmo();
+}
+
 void AWeaponBase::SetWeaponState(EWeaponState State)
 {
 	WeaponState = State;
@@ -118,10 +143,22 @@ void AWeaponBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+void AWeaponBase::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	if (Owner == nullptr)
+	{
+		OwnerCharacter = nullptr;
+		OwnerController = nullptr;
+	}
+	else SetHUDAmmo();
+}
+
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME_CONDITION(AWeaponBase, WeaponState, COND_OwnerOnly);
+	DOREPLIFETIME(AWeaponBase, WeaponState);
+	DOREPLIFETIME(AWeaponBase, Ammo);
 }
 
 void AWeaponBase::ShowPickUpWidget(bool bShowWidget)
@@ -151,6 +188,7 @@ void AWeaponBase::Fire(const FVector& HitTarget)
 			}
 		}
 	}
+	SpendRound();
 }
 
 void AWeaponBase::Dropped()
@@ -159,4 +197,6 @@ void AWeaponBase::Dropped()
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
+	OwnerCharacter = nullptr;
+	OwnerController = nullptr;
 }

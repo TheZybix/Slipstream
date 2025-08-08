@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+class ABasePlayerCharacter;
+class ABasePlayerController;
 class USkeletalMeshComponent;
 class USphereComponent;
 class UWidgetComponent;
@@ -32,9 +34,11 @@ public:
 	AWeaponBase();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void OnRep_Owner() override;
 	void ShowPickUpWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
+	void SetHUDAmmo();
 
 	/* Textures for Weaponcrosshairs */
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
@@ -99,6 +103,23 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float ZoomInterpSpeed = 20.f;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	int32 Ammo;
+
+	UFUNCTION()
+	void OnRep_Ammo();
+
+	void SpendRound();
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;
+
+	UPROPERTY()
+	ABasePlayerCharacter* OwnerCharacter;
+
+	UPROPERTY()
+	ABasePlayerController* OwnerController;
 	
 public:
 	void SetWeaponState(EWeaponState State);

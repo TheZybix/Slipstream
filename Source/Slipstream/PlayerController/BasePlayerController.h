@@ -18,6 +18,7 @@ public:
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDScore(float Score);
 	void SetHUDDefeat(int Defeat);
+	void SetHUDWeaponAmmo(int32 Ammo);
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetHUDElimination(const FString& EliminationText);
