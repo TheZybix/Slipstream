@@ -218,12 +218,13 @@ void ABasePlayerCharacter::UpdateHUDHealth()
 
 void ABasePlayerCharacter::PollInit()
 {
-	if (PlayerState == nullptr)
+	if (BasePlayerState == nullptr)
 	{
-		PlayerState = GetPlayerState<ABasePlayerState>();
-		if (PlayerState)
+		BasePlayerState = GetPlayerState<ABasePlayerState>();
+		if (BasePlayerState)
 		{
-			PlayerState->AddToScore(0.f);
+			BasePlayerState->AddToScore(0.f);
+			BasePlayerState->AddToDefeat(0);
 		}
 	}
 }

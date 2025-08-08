@@ -17,11 +17,17 @@ class SLIPSTREAM_API ABasePlayerController : public APlayerController
 public:
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDScore(float Score);
+	void SetHUDDefeat(int Defeat);
+
+	UFUNCTION(Client, Reliable)
+	void ClientSetHUDElimination(const FString& EliminationText);
+	
 	virtual void OnPossess(APawn* InPawn) override;
 	
 protected:
 	virtual void BeginPlay() override;
 	
 private:
+	UPROPERTY()
 	ABasePlayerHUD* PlayerHUD;
 };

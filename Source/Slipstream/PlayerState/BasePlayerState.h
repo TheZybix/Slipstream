@@ -17,12 +17,24 @@ class SLIPSTREAM_API ABasePlayerState : public APlayerState
 	GENERATED_BODY()
 	
 public:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 	virtual void OnRep_Score() override;
+
+	UFUNCTION()
+	virtual void OnRep_Defeat();
+	
 	void AddToScore(float ScoreAmount);
+	void AddToDefeat(int32 DefeatAmount);
+
 
 private:
+	UPROPERTY()
 	ABasePlayerCharacter* PlayerCharacter;
+	UPROPERTY()
 	ABasePlayerController* PlayerController;
 
 	float NewScore;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Defeat)
+	int32 Defeat;
 };

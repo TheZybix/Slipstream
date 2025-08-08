@@ -43,7 +43,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastElim();
 
-	ABasePlayerState* PlayerState;
+	UPROPERTY()
+	ABasePlayerState* BasePlayerState;
 
 
 protected:

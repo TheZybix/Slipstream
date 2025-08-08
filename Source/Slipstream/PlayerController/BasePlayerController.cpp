@@ -40,6 +40,26 @@ void ABasePlayerController::SetHUDScore(float Score)
 	}
 }
 
+void ABasePlayerController::SetHUDDefeat(int Defeat)
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->DefeatAmount)
+	{
+		FString DefeatText = FString::Printf(TEXT("%d"), Defeat);
+		PlayerHUD->CharacterOverlay->DefeatAmount->SetText(FText::FromString(DefeatText));
+	}
+}
+
+void ABasePlayerController::ClientSetHUDElimination_Implementation(const FString& EliminationText)
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->EliminationText)
+	{
+		PlayerHUD->CharacterOverlay->EliminationText->SetText(FText::FromString(EliminationText));
+	}
+}
+
+
 void ABasePlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
