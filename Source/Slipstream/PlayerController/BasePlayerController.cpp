@@ -60,6 +60,16 @@ void ABasePlayerController::SetHUDWeaponAmmo(int32 Ammo)
 	}
 }
 
+void ABasePlayerController::SetHUDStoredAmmo(int32 Ammo)
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->StoredAmmoAmount)
+	{
+		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
+		PlayerHUD->CharacterOverlay->StoredAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+}
+
 void ABasePlayerController::ClientSetHUDElimination_Implementation(const FString& EliminationText)
 {
 	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;

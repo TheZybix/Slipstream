@@ -22,6 +22,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
+#include "Slipstream/Types/WeaponTypes.h"
 
 ABasePlayerCharacter::ABasePlayerCharacter()
 {
@@ -95,7 +96,34 @@ void ABasePlayerCharacter::PlayFireMontage(bool bAiming)
 		
 		/*FName SectionName;
 		 *SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
-		 *AnimInstance->Montage_JumpToSection(SectionName;)*/
+		 *AnimInstance->Montage_JumpToSection(SectionName);*/
+	}
+}
+
+void ABasePlayerCharacter::PlayReloadMontage()
+{
+	if (!CombatComponent || !CombatComponent->EquippedWeapon) return;
+		
+	UAnimMontage* MontageToPlay;
+	switch (CombatComponent->EquippedWeapon->GetWeaponType())
+	{
+	case EWeaponType::EWT_AssaultRifle:
+		MontageToPlay = AssaultRifleMontage;
+		break;
+
+	case EWeaponType::EWT_Max:
+		return;
+			
+	default:
+		return;
+	}
+	
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && MontageToPlay)
+	{
+		AnimInstance->Montage_Play(MontageToPlay);
+		FName SectionName = FName("Reload");
+		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
 
@@ -508,6 +536,14 @@ void ABasePlayerCharacter::TriggerKeyPressed(const FInputActionValue& Value)
 	}
 }
 
+void ABasePlayerCharacter::ReloadKeyPressed(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->Reload();
+	}
+}
+
 
 void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -524,6 +560,7 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::AimKeyPressed);
 		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Started, this, &ABasePlayerCharacter::TriggerKeyPressed);
 		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::TriggerKeyPressed);
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::ReloadKeyPressed);
 	}
 
 }
@@ -630,4 +667,11 @@ FVector ABasePlayerCharacter::GetHitTarget() const
 {
 	if (CombatComponent) return CombatComponent->HitTarget;
 	return FVector();
+}
+
+ECombatState ABasePlayerCharacter::GetCombatState() const
+{
+	if (CombatComponent == nullptr) return ECombatState::ECS_Max;
+		
+	return CombatComponent->CombatState;
 }

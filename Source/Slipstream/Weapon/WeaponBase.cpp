@@ -85,15 +85,38 @@ void AWeaponBase::SetHUDAmmo()
 	}
 }
 
+void AWeaponBase::SetHUDStoredAmmo()
+{
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter)
+	{
+		OwnerController = OwnerController == nullptr ? Cast<ABasePlayerController>(OwnerCharacter->Controller) : OwnerController;
+		if (OwnerController)
+		{
+			OwnerController->SetHUDStoredAmmo(StoredAmmo);
+		}
+	}
+}
+
+void AWeaponBase::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
+}
+
 void AWeaponBase::SpendRound()
 {
-	--Ammo;
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
 }
 
 void AWeaponBase::OnRep_Ammo()
 {
 	SetHUDAmmo();
+}
+
+void AWeaponBase::OnRep_StoredAmmo()
+{
+	SetHUDStoredAmmo();
 }
 
 void AWeaponBase::SetWeaponState(EWeaponState State)
@@ -151,7 +174,11 @@ void AWeaponBase::OnRep_Owner()
 		OwnerCharacter = nullptr;
 		OwnerController = nullptr;
 	}
-	else SetHUDAmmo();
+	else
+	{
+		SetHUDAmmo();
+		SetHUDStoredAmmo();
+	}
 }
 
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -159,6 +186,7 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AWeaponBase, WeaponState);
 	DOREPLIFETIME(AWeaponBase, Ammo);
+	DOREPLIFETIME(AWeaponBase, StoredAmmo);
 }
 
 void AWeaponBase::ShowPickUpWidget(bool bShowWidget)
@@ -199,4 +227,9 @@ void AWeaponBase::Dropped()
 	SetOwner(nullptr);
 	OwnerCharacter = nullptr;
 	OwnerController = nullptr;
+}
+
+bool AWeaponBase::IsEmpty()
+{
+	return Ammo <= 0;
 }

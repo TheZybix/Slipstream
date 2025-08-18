@@ -26,6 +26,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
+	DOREPLIFETIME(UCombatComponent, CombatState);
 }
 
 void UCombatComponent::BeginPlay()
@@ -71,8 +72,87 @@ void UCombatComponent::EquipWeapon(AWeaponBase* WeaponToEquip)
 	}
 	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->SetHUDAmmo();
+	EquippedWeapon->SetHUDStoredAmmo();
+
+	if (EquippedWeapon->IsEmpty())
+	{
+		Reload();
+	}
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+	if (EquippedWeapon && EquippedWeapon->EquipSound) UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->EquipSound, Character->GetActorLocation());
+}
+
+void UCombatComponent::Reload()
+{
+	if (EquippedWeapon && EquippedWeapon->GetStoredAmmo() > 0 && CombatState != ECombatState::ECS_Reloading)
+	{
+		ServerReload();
+	}
+}
+
+void UCombatComponent::SetCombatState(ECombatState NewCombatState)
+{
+	if (Character == nullptr) return;
+	if (Character->HasAuthority())
+	{
+		UpdateAmmoValues();
+		CombatState = NewCombatState;
+	}
+	if (bTriggerKeyPressed) Fire();
+}
+
+void UCombatComponent::HandleReload()
+{
+	Character->PlayReloadMontage();
+}
+
+void UCombatComponent::UpdateAmmoValues()
+{
+	if (EquippedWeapon == nullptr) return;
+	int32 ReloadAmount = AmountToReload();
+	int32 NewStoredAmmo = FMath::Clamp(EquippedWeapon->GetStoredAmmo() - ReloadAmount, 0,EquippedWeapon->GetStoredAmmo());
+	EquippedWeapon->SetStoredAmmo(NewStoredAmmo);
+	EquippedWeapon->AddAmmo(-ReloadAmount);
+	PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Character->Controller) : PlayerController;
+	if (PlayerController)
+	{
+		PlayerController->SetHUDStoredAmmo(NewStoredAmmo);
+		PlayerController->SetHUDWeaponAmmo(EquippedWeapon->GetMagAmmo());
+	}
+}
+
+void UCombatComponent::ServerReload_Implementation()
+{
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
+	
+	CombatState = ECombatState::ECS_Reloading;
+	HandleReload();
+}
+
+void UCombatComponent::OnRep_CombatState()
+{
+	switch (CombatState)
+	{
+		case ECombatState::ECS_Reloading:
+			HandleReload();
+			break;
+		case ECombatState::ECS_Unoccupied:
+			if (bTriggerKeyPressed)
+			{
+				Fire();
+			}
+			break;
+	}
+}
+
+int32 UCombatComponent::AmountToReload()
+{
+	if (EquippedWeapon == nullptr) return 0;
+	int32 RoomInMag = EquippedWeapon->GetMagCapacity() - EquippedWeapon->GetMagAmmo();
+	int32 AmountCarried = EquippedWeapon->GetStoredAmmo();
+	int32 Least = FMath::Min(RoomInMag, AmountCarried);
+	return FMath::Clamp(RoomInMag, 0, Least);
 }
 
 void UCombatComponent::SetAiming(bool bIsAiming)
@@ -100,6 +180,7 @@ void UCombatComponent::OnRep_EquippedWeapon()
 		}
 		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		Character->bUseControllerRotationYaw = true;
+		if (EquippedWeapon->EquipSound) UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->EquipSound, Character->GetActorLocation());
 	}
 }
 
@@ -123,11 +204,15 @@ void UCombatComponent::FireTimerFinished()
 	if (EquippedWeapon == nullptr) return;
 	bCanFIre = true;
 	if (bTriggerKeyPressed && EquippedWeapon->bAutomatic) Fire();
+	if (EquippedWeapon->IsEmpty())
+	{
+		Reload();
+	}
 }
 
 void UCombatComponent::Fire()
 {
-	if (bCanFIre)
+	if (CanFire())
 	{
 		bCanFIre = false;
 		ServerFire(HitTarget);
@@ -150,7 +235,7 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 {
 	if (!EquippedWeapon) return;
 		
-	if (Character)
+	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
@@ -260,6 +345,12 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 			PlayerHUD->SetHUDPackage(HUDPackage);
 		}
 	}
+}
+
+bool UCombatComponent::CanFire()
+{
+	if (EquippedWeapon == nullptr) return false;
+	return bCanFIre && !EquippedWeapon->IsEmpty() && CombatState == ECombatState::ECS_Unoccupied;
 }
 
 void UCombatComponent::InterpolateFOV(float DeltaTime)

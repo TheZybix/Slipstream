@@ -33,5 +33,11 @@ public:
 	UTextBlock* AmmoAmount;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* StoredAmmoAmount;
+
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* EliminationText;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* MatchTimer;
 };

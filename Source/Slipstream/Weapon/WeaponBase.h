@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+enum class EWeaponType : uint8;
 class ABasePlayerCharacter;
 class ABasePlayerController;
 class USkeletalMeshComponent;
@@ -24,7 +25,6 @@ enum class EWeaponState : uint8
 	EWS_Max UMETA(DisplayName = "DefaultMax")
 };
 
-
 UCLASS()
 class SLIPSTREAM_API AWeaponBase : public AActor
 {
@@ -39,6 +39,8 @@ public:
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
 	void SetHUDAmmo();
+	void SetHUDStoredAmmo();
+	void AddAmmo(int32 AmmoToAdd);
 
 	/* Textures for Weaponcrosshairs */
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
@@ -62,6 +64,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bAutomatic = true;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	USoundBase* EquipSound;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -107,8 +112,14 @@ private:
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
 	int32 Ammo;
 
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_StoredAmmo)
+	int32 StoredAmmo;
+
 	UFUNCTION()
 	void OnRep_Ammo();
+
+	UFUNCTION()
+	void OnRep_StoredAmmo();
 
 	void SpendRound();
 
@@ -120,6 +131,9 @@ private:
 
 	UPROPERTY()
 	ABasePlayerController* OwnerController;
+
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
 	
 public:
 	void SetWeaponState(EWeaponState State);
@@ -128,4 +142,10 @@ public:
 	FORCEINLINE float GetZoomedFOV() const {return ZoomedFOV;}
 	FORCEINLINE float GetZoomInterpSpeed() const {return ZoomInterpSpeed;}
 	FORCEINLINE float GetWeaponBulletSpread() const { return WeaponSpread;}
+	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
+	FORCEINLINE int32 GetStoredAmmo() const { return StoredAmmo; }
+	FORCEINLINE void SetStoredAmmo(int32 NewStoredAmmo) { StoredAmmo = NewStoredAmmo; }
+	FORCEINLINE int32 GetMagAmmo() const { return Ammo; }
+	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
+	bool IsEmpty();
 };

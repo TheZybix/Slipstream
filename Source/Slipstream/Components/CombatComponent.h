@@ -5,10 +5,13 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Slipstream/HUD/BasePlayerHUD.h"
+#include "Slipstream/Types/CombatState.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LENGTH 80000
 
+enum class ECombatState : uint8;
+enum class EWeaponType : uint8;
 class AWeaponBase;
 class ABasePlayerCharacter;
 class ABasePlayerController;
@@ -25,6 +28,10 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	friend class ABasePlayerCharacter;
 	void EquipWeapon(AWeaponBase* WeaponToEquip);
+	void Reload();
+
+	UFUNCTION(BlueprintCallable)
+	void SetCombatState(ECombatState NewCombatState);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -48,6 +55,12 @@ protected:
 	void TraceUnderCrosshairs (FHitResult& TraceHitResult);
 
 	void SetHUDCrosshairs(float DeltaTime);
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+
+	void HandleReload();
+	void UpdateAmmoValues();
 
 private:
 	ABasePlayerCharacter* Character;
@@ -93,13 +106,23 @@ private:
 
 	/* Automatic fire */
 	FTimerHandle FireTimer;
+	bool CanFire(); 
 	
 	bool bCanFIre = true;
 
 	void StartFireTimer();
 	void FireTimerFinished();
 
+	TMap<EWeaponType, int32> CarriedAmmoMap;
+
+	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
+	ECombatState CombatState = ECombatState::ECS_Unoccupied;
+
+	UFUNCTION()
+	void OnRep_CombatState();
+
+	int32 AmountToReload();
+
 public:	
 
 };
-

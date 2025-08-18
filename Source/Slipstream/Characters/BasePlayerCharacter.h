@@ -10,6 +10,7 @@
 #include "Components/TimelineComponent.h"
 #include "BasePlayerCharacter.generated.h"
 
+enum class ECombatState : uint8;
 class UCombatComponent;
 class AWeaponBase;
 class UInputMappingContext;
@@ -37,6 +38,7 @@ public:
 	virtual void OnRep_ReplicatedMovement() override;
 	virtual void PostInitializeComponents() override;
 	void PlayFireMontage(bool bAiming);
+	void PlayReloadMontage();
 	void PlayDeathMontage();
 
 	void Elim();
@@ -88,6 +90,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	TObjectPtr<UInputAction> TriggerAction;
+
+	UPROPERTY(EditAnywhere, Category = Input)
+	TObjectPtr<UInputAction> ReloadAction;
 	
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -103,6 +108,7 @@ private:
 	void CrouchKeyPressed(const FInputActionValue& Value);
 	void AimKeyPressed(const FInputActionValue& Value);
 	void TriggerKeyPressed(const FInputActionValue& Value);
+	void ReloadKeyPressed(const FInputActionValue& Value);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	UWidgetComponent* OverheadWidget;
@@ -113,7 +119,7 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeaponBase* LastWeapon);
 
-	UPROPERTY(VisibleAnywhere, Category = "Combat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true), Category = "Combat")
 	UCombatComponent* CombatComponent;
 
 	UFUNCTION(Server, Reliable)
@@ -127,8 +133,13 @@ private:
 	ETurningInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);
 
+	/* Animaton Montages */
+
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* FireWeaponMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* AssaultRifleMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* HitReactMontage;
@@ -262,6 +273,8 @@ public:
 
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+
+	ECombatState GetCombatState() const;
 };
 
 

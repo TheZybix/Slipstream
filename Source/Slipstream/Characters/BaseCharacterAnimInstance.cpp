@@ -5,6 +5,7 @@
 #include "BasePlayerCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Slipstream/Types/CombatState.h"
 #include "Slipstream/Weapon/WeaponBase.h"
 
 void UBaseCharacterAnimInstance::NativeInitializeAnimation()
@@ -75,4 +76,8 @@ void UBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		DrawDebugLine(GetWorld(), MuzzleTransform.GetLocation(), MuzzleTransform.GetLocation() + MuzzleX * 1000.f, FColor::Yellow);
 		DrawDebugLine(GetWorld(), MuzzleTransform.GetLocation(), PlayerCharacter->GetHitTarget(), FColor::Green); */
 	}
+
+	bUseFabrik = PlayerCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bUseAimOffset = PlayerCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bUseRightHand = PlayerCharacter->GetCombatState() != ECombatState::ECS_Reloading;
 }
