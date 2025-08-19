@@ -9,6 +9,28 @@
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
 
+ASlipstreamGameMode::ASlipstreamGameMode()
+{
+	bDelayedStart = true;
+}
+
+void ASlipstreamGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+	LevelStartingTime = GetWorld()->GetTimeSeconds();
+}
+
+
+void ASlipstreamGameMode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	if (MatchState == MatchState::WaitingToStart)
+	{
+		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f) StartMatch();
+	}
+}
+
 void ASlipstreamGameMode::PlayerEliminated(ABasePlayerCharacter* EliminatedPlayer,
                                            ABasePlayerController* EliminatedPlayerController, ABasePlayerController* AttackerPlayerController)
 {
@@ -56,6 +78,7 @@ void ASlipstreamGameMode::RequestRespawn(ACharacter* EliminatedPlayer, AControll
 		RestartPlayerAtPlayerStart(EliminatedPlayerController, FoundActors[Selection]);
 	}
 }
+
 
 void ASlipstreamGameMode::EliminationTimerFinished()
 {

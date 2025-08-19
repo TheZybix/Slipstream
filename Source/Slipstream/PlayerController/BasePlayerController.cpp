@@ -17,6 +17,27 @@ void ABasePlayerController::BeginPlay()
 	PlayerHUD = Cast<ABasePlayerHUD>(GetHUD());
 }
 
+void ABasePlayerController::SetHUDTime()
+{
+	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
+	if (CountdownInt != SecondsLeft) SetHUDMatchCountdown(MatchTime - GetServerTime());
+	CountdownInt = SecondsLeft;
+}
+
+void ABasePlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest,
+	float TimeSeverReceivedClientRequest)
+{
+	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
+	float CurrentServerTime = TimeSeverReceivedClientRequest + (0.5f * RoundTripTime);
+	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+}
+
+void ABasePlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
+{
+	float ServerTimeOfReceipt = GetWorld()->GetTimeSeconds();
+	ClientReportServerTime(TimeOfClientRequest, ServerTimeOfReceipt);
+}
+
 void ABasePlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
@@ -70,6 +91,19 @@ void ABasePlayerController::SetHUDStoredAmmo(int32 Ammo)
 	}
 }
 
+void ABasePlayerController::SetHUDMatchCountdown(float CountdownTime)
+{
+	
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->MatchCountdownTimer)
+	{
+		int32 Minutes = FMath::FloorToInt(CountdownTime/60);
+		int32 Seconds = CountdownTime - Minutes * 60;
+		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+		PlayerHUD->CharacterOverlay->MatchCountdownTimer->SetText(FText::FromString(CountdownText));
+	}
+}
+
 void ABasePlayerController::ClientSetHUDElimination_Implementation(const FString& EliminationText)
 {
 	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
@@ -87,5 +121,37 @@ void ABasePlayerController::OnPossess(APawn* InPawn)
 	if (PlayerCharacter)
 	{
 		SetHUDHealth(PlayerCharacter->GetHealth(), PlayerCharacter->GetMaxHealth());
+	}
+}
+
+void ABasePlayerController::CheckTimeSync(float DeltaTime)
+{
+	TimeSyncRunningTime += DeltaTime;
+	if (IsLocalController() && TimeSyncRunningTime > TimeSyncFrequency)
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		TimeSyncRunningTime = 0.f;
+	}
+}
+
+void ABasePlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	SetHUDTime();
+	CheckTimeSync(DeltaTime);
+}
+
+float ABasePlayerController::GetServerTime()
+{
+	if (HasAuthority()) return GetWorld()->GetTimeSeconds();
+	else return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+}
+
+void ABasePlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+	if (IsLocalController())
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 	}
 }
