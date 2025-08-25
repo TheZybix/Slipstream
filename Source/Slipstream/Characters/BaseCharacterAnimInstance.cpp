@@ -78,6 +78,6 @@ void UBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	}
 
 	bUseFabrik = PlayerCharacter->GetCombatState() != ECombatState::ECS_Reloading;
-	bUseAimOffset = PlayerCharacter->GetCombatState() != ECombatState::ECS_Reloading;
-	bUseRightHand = PlayerCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bUseAimOffset = PlayerCharacter->GetCombatState() != ECombatState::ECS_Reloading && !PlayerCharacter->CheckDisableGameplay();
+	bUseRightHand = PlayerCharacter->GetCombatState() != ECombatState::ECS_Reloading && !PlayerCharacter->CheckDisableGameplay();
 }

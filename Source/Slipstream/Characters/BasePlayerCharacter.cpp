@@ -70,6 +70,7 @@ void ABasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME_CONDITION(ABasePlayerCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ABasePlayerCharacter, Health);
+	DOREPLIFETIME(ABasePlayerCharacter, bDisableGameplay)
 }
 
 void ABasePlayerCharacter::OnRep_ReplicatedMovement()
@@ -175,10 +176,8 @@ void ABasePlayerCharacter::MulticastElim_Implementation()
 	/* Disable character movement */
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->StopMovementImmediately();
-	if (PlayerController)
-	{
-		DisableInput(PlayerController);
-	}
+	
+	bDisableGameplay = true;
 	/* Disable collision */
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -307,21 +306,36 @@ void ABasePlayerCharacter::InitializeMaterials()
 	}
 }
 
+
 void ABasePlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	InitializeMappingContext();
+	
 	UpdateHUDHealth();
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABasePlayerCharacter::ReceiveDamage);
 	}
+	
 }
 
 void ABasePlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	RotateInPlace(DeltaTime);
+	HideCameraIfCharacterClose();
+	PollInit();
+}
+
+void ABasePlayerCharacter::RotateInPlace(float DeltaTime)
+{
+	if (bDisableGameplay)
+	{
+		bUseControllerRotationYaw = false;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
 	if (GetLocalRole() > ROLE_SimulatedProxy && IsLocallyControlled()) AimOffset(DeltaTime);
 	else
 	{
@@ -329,10 +343,37 @@ void ABasePlayerCharacter::Tick(float DeltaTime)
 		if (TimeSinceLastMovementReplication > 0.25f) OnRep_ReplicatedMovement();
 		CalculateAO_Pitch();
 	}
-	HideCameraIfCharacterClose();
-	PollInit();
 }
 
+void ABasePlayerCharacter::Restart()
+{
+	Super::Restart();
+	InitializeMappingContext();
+}
+
+void ABasePlayerCharacter::InitializeMappingContext()
+{
+	/*TObjectPtr<APlayerController> PlayerControllerInput = Cast<APlayerController>(GetController());
+	if (PlayerControllerInput)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerControllerInput->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(InputMappingContext, 0);
+		}
+	}*/
+	
+	if (!bIsMappingContextAdded)
+	{
+		if (TObjectPtr<APlayerController> PlayerControllerInput = Cast<APlayerController>(GetController()))
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerControllerInput->GetLocalPlayer()))
+			{
+				Subsystem->AddMappingContext(InputMappingContext, 0);
+				bIsMappingContextAdded = true;
+			}
+		}
+	}
+}
 
 void ABasePlayerCharacter::HideCameraIfCharacterClose()
 {
@@ -443,17 +484,7 @@ void ABasePlayerCharacter::Jump()
 	else Super::Jump();
 }
 
-void ABasePlayerCharacter::InitializeMappingContext()
-{
-	TObjectPtr<APlayerController> PlayerControllerInput = Cast<APlayerController>(GetController());
-	if (PlayerControllerInput)
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerControllerInput->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(InputMappingContext, 0);
-		}
-	}
-}
+
 
 void ABasePlayerCharacter::Destroyed()
 {
@@ -462,10 +493,16 @@ void ABasePlayerCharacter::Destroyed()
 	{
 		EliminationBotParticlesComponent->DestroyComponent();
 	}
+	if (CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		CombatComponent->EquippedWeapon->Destroy();
+	}
 }
+
 
 void ABasePlayerCharacter::Move(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	//Get rotation from controller instead of player root
@@ -493,11 +530,13 @@ void ABasePlayerCharacter::Look(const FInputActionValue& Value)
 
 void ABasePlayerCharacter::JumpKeyPressed(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
 	Jump();
 }
 
 void ABasePlayerCharacter::EquipKeyPressed(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
 		if (HasAuthority())	CombatComponent->EquipWeapon(OverlappingWeapon);
@@ -507,6 +546,7 @@ void ABasePlayerCharacter::EquipKeyPressed(const FInputActionValue& Value)
 
 void ABasePlayerCharacter::ServerEquipKeyPressed_Implementation()
 {
+	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
 		CombatComponent->EquipWeapon(OverlappingWeapon);
@@ -522,6 +562,7 @@ void ABasePlayerCharacter::CrouchKeyPressed(const FInputActionValue& Value)
 
 void ABasePlayerCharacter::AimKeyPressed(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
 		CombatComponent->SetAiming(Value.Get<bool>());
@@ -530,6 +571,7 @@ void ABasePlayerCharacter::AimKeyPressed(const FInputActionValue& Value)
 
 void ABasePlayerCharacter::TriggerKeyPressed(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
 	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
 		CombatComponent->TriggerKeyPressed(Value.Get<bool>());
@@ -538,6 +580,7 @@ void ABasePlayerCharacter::TriggerKeyPressed(const FInputActionValue& Value)
 
 void ABasePlayerCharacter::ReloadKeyPressed(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
 		CombatComponent->Reload();

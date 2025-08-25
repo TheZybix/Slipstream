@@ -31,6 +31,7 @@ public:
 	void InitializeMappingContext();
 
 	virtual void Destroyed() override;
+	virtual void Restart() override;
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -48,10 +49,14 @@ public:
 	UPROPERTY()
 	ABasePlayerState* BasePlayerState;
 
+	UPROPERTY(Replicated)
+	bool bDisableGameplay = false;
+
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void RotateInPlace(float DeltaTime);
 
 	void AimOffset(float DeltaTime);
 	void SimProxiesTurn();
@@ -254,6 +259,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundBase* EliminationBotSound;
+
+	bool bIsMappingContextAdded = false;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
@@ -275,6 +282,9 @@ public:
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 
 	ECombatState GetCombatState() const;
+	FORCEINLINE UCombatComponent* GetCombat() const { return CombatComponent; }
+
+	FORCEINLINE bool CheckDisableGameplay() const { return bDisableGameplay; }
 };
 
 

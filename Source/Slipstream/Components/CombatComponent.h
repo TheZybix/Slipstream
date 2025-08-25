@@ -32,6 +32,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetCombatState(ECombatState NewCombatState);
+
+	void TriggerKeyPressed(bool bPressed);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -43,8 +45,6 @@ protected:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 	void Fire();
-
-	void TriggerKeyPressed(bool bPressed);
 
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
@@ -124,5 +124,4 @@ private:
 	int32 AmountToReload();
 
 public:	
-
 };

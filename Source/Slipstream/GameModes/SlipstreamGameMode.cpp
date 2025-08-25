@@ -9,6 +9,11 @@
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
 
+namespace MatchState
+{
+	const FName Cooldown = FName("Cooldown");
+}
+
 ASlipstreamGameMode::ASlipstreamGameMode()
 {
 	bDelayedStart = true;
@@ -20,6 +25,20 @@ void ASlipstreamGameMode::BeginPlay()
 	LevelStartingTime = GetWorld()->GetTimeSeconds();
 }
 
+void ASlipstreamGameMode::OnMatchStateSet()
+{
+	Super::OnMatchStateSet();
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ABasePlayerController* PlayerController = Cast<ABasePlayerController>(*It);
+		if (PlayerController)
+		{
+			PlayerController->OnMatchStateSet(MatchState);
+		}
+	}
+}
+
 
 void ASlipstreamGameMode::Tick(float DeltaTime)
 {
@@ -28,6 +47,16 @@ void ASlipstreamGameMode::Tick(float DeltaTime)
 	{
 		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 		if (CountdownTime <= 0.f) StartMatch();
+	}
+	else if (MatchState == MatchState::InProgress)
+	{
+		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f) SetMatchState(MatchState::Cooldown);
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		CountdownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime<= 0.f) RestartGame();
 	}
 }
 

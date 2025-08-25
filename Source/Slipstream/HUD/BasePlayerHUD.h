@@ -26,6 +26,9 @@ public:
 /**
  * 
  */
+
+class UAnnouncement;
+
 UCLASS()
 class SLIPSTREAM_API ABasePlayerHUD : public AHUD
 {
@@ -33,14 +36,23 @@ class SLIPSTREAM_API ABasePlayerHUD : public AHUD
 
 public:
 	virtual void DrawHUD() override;
-
+	void AddCharacterOverlay();
+	void AddAnnouncement();
+	
 	UPROPERTY(EditAnywhere, Category = "PlayerStats")
 	TSubclassOf<UUserWidget> CharacterOverlayClass;
+
+	UPROPERTY(EditAnywhere, Category = "Announcements")
+	TSubclassOf<UUserWidget> AnnouncementClass;
+
+	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
+
+	UPROPERTY()
+	UAnnouncement* Announcement = nullptr;
 
 protected:
 	virtual void BeginPlay() override;
-	void AddCharacterOverlay();
 
 private:
 	FHUDPackage HUDPackage;

@@ -6,9 +6,14 @@
 #include "GameFramework/GameMode.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "SlipstreamGameMode.generated.h"
+
+namespace MatchState
+{
+	extern SLIPSTREAM_API const FName Cooldown; //Match duration as been reached, display endgame information
+}
+
 class ABasePlayerController;
 class ABasePlayerCharacter;
-
 
 /**
  * 
@@ -28,14 +33,24 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	float WarmupTime = 10.f;
 
+	UPROPERTY(EditDefaultsOnly)
+	float MatchTime = 120.f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float CooldownTime = 10.f;
+
 	float LevelStartingTime = 0.f;
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnMatchStateSet() override;
 
 private:
 	FTimerHandle EliminationTextTimer;
 	float EliminationTextTimerDelay = 5.f;
 	void EliminationTimerFinished();
 	float CountdownTime = 0.f;
+
+public:
+	FORCEINLINE float GetCountdownTime() { return CountdownTime; }
 };
