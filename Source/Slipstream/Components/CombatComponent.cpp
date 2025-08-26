@@ -65,7 +65,9 @@ void UCombatComponent::EquipWeapon(AWeaponBase* WeaponToEquip)
 	if (EquippedWeapon) EquippedWeapon->Dropped();
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-	const USkeletalMeshSocket* HandSocket =  Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
+	
+	if (!EquippedWeapon->RightHandSocket.IsValid()) return;
+	const USkeletalMeshSocket* HandSocket =  Character->GetMesh()->GetSocketByName(EquippedWeapon->RightHandSocket);
 	if (HandSocket)
 	{
 		HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());
@@ -170,10 +172,10 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 
 void UCombatComponent::OnRep_EquippedWeapon()
 {
-	if (EquippedWeapon && Character)
+	if (EquippedWeapon && EquippedWeapon->RightHandSocket.IsValid() && Character)
 	{
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-		const USkeletalMeshSocket* HandSocket =  Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
+		const USkeletalMeshSocket* HandSocket =  Character->GetMesh()->GetSocketByName(EquippedWeapon->RightHandSocket);
 		if (HandSocket)
 		{
 			HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());

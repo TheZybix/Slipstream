@@ -112,6 +112,10 @@ void ABasePlayerCharacter::PlayReloadMontage()
 		MontageToPlay = AssaultRifleMontage;
 		break;
 
+	case EWeaponType::EWT_RocketLauncher:
+		MontageToPlay = AssaultRifleMontage;
+		break;
+
 	case EWeaponType::EWT_Max:
 		return;
 			
@@ -178,6 +182,7 @@ void ABasePlayerCharacter::MulticastElim_Implementation()
 	GetCharacterMovement()->StopMovementImmediately();
 	
 	bDisableGameplay = true;
+	GetCharacterMovement()->DisableMovement();
 	if (CombatComponent)
 	{
 		CombatComponent->TriggerKeyPressed(false);

@@ -67,6 +67,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	USoundBase* EquipSound;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	FName RightHandSocket;
 	
 protected:
 	virtual void BeginPlay() override;
