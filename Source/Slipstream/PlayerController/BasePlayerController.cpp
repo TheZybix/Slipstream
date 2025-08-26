@@ -14,6 +14,8 @@
 #include "Slipstream/Characters/BasePlayerCharacter.h"
 #include "Slipstream/Components/CombatComponent.h"
 #include "Slipstream/GameModes/SlipstreamGameMode.h"
+#include "Slipstream/GameState/SlipstreamGameState.h"
+#include "Slipstream/PlayerState/BasePlayerState.h"
 #include "Slipstream/HUD/Announcement.h"
 
 
@@ -297,7 +299,35 @@ void ABasePlayerController::HandleCooldown()
 		{
 			PlayerHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
 			PlayerHUD->Announcement->AnnouncementText->SetText(FText::FromString("New match starts in:"));
-			PlayerHUD->Announcement->InfoText->SetText(FText());
+
+			ASlipstreamGameState* SlipstreamGameState = Cast<ASlipstreamGameState>(UGameplayStatics::GetGameState(this));
+			ABasePlayerState* SlipstreamPlayerState = GetPlayerState<ABasePlayerState>();
+			if (SlipstreamGameState)
+			{
+				TArray<ABasePlayerState*> TopScoringPlayers = SlipstreamGameState->TopScoringPlayers;
+				FString InfoTextString;
+				if (TopScoringPlayers.Num() == 0)
+				{
+					InfoTextString = FString("There is no winner.");
+				}
+				else if (TopScoringPlayers.Num() == 1 && TopScoringPlayers[0] == SlipstreamPlayerState)
+				{
+					InfoTextString = FString("You are the winner!");
+				}
+				else if (TopScoringPlayers.Num() == 1)
+				{
+					InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopScoringPlayers[0]->GetPlayerName());
+				}
+				else if (TopScoringPlayers.Num() > 1)
+				{
+					InfoTextString = FString("Players tied for the win: \n");
+					for (auto TiedPlayer : TopScoringPlayers)
+					{
+						InfoTextString.Append(FString::Printf(TEXT("%s"), *TiedPlayer->GetPlayerName()));
+					}
+				}
+				PlayerHUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
+			}
 		}
 	}
 	ABasePlayerCharacter* PlayerCharacter = Cast<ABasePlayerCharacter>(GetPawn());

@@ -178,6 +178,10 @@ void ABasePlayerCharacter::MulticastElim_Implementation()
 	GetCharacterMovement()->StopMovementImmediately();
 	
 	bDisableGameplay = true;
+	if (CombatComponent)
+	{
+		CombatComponent->TriggerKeyPressed(false);
+	}
 	/* Disable collision */
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -484,8 +488,6 @@ void ABasePlayerCharacter::Jump()
 	else Super::Jump();
 }
 
-
-
 void ABasePlayerCharacter::Destroyed()
 {
 	Super::Destroyed();
@@ -493,12 +495,14 @@ void ABasePlayerCharacter::Destroyed()
 	{
 		EliminationBotParticlesComponent->DestroyComponent();
 	}
-	if (CombatComponent && CombatComponent->EquippedWeapon)
+
+	ASlipstreamGameMode* SlipstreamGame = Cast<ASlipstreamGameMode>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = SlipstreamGame && SlipstreamGame->GetMatchState() != MatchState::InProgress;
+	if (CombatComponent && CombatComponent->EquippedWeapon && bMatchNotInProgress)
 	{
 		CombatComponent->EquippedWeapon->Destroy();
 	}
 }
-
 
 void ABasePlayerCharacter::Move(const FInputActionValue& Value)
 {

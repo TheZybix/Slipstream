@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
+#include "Slipstream/GameState/SlipstreamGameState.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
 
@@ -65,10 +66,12 @@ void ASlipstreamGameMode::PlayerEliminated(ABasePlayerCharacter* EliminatedPlaye
 {
 	ABasePlayerState* AttackerPlayerState = AttackerPlayerController ? Cast<ABasePlayerState>(AttackerPlayerController->PlayerState) : nullptr;
 	ABasePlayerState* EliminatedPlayerState = EliminatedPlayerController ? Cast<ABasePlayerState>(EliminatedPlayerController->PlayerState) : nullptr;
+	ASlipstreamGameState* SlipstreamGameState = GetGameState<ASlipstreamGameState>();
 
-	if (AttackerPlayerState && AttackerPlayerState != EliminatedPlayerState)
+	if (AttackerPlayerState && AttackerPlayerState != EliminatedPlayerState && SlipstreamGameState)
 	{
 		AttackerPlayerState->AddToScore(1.f);
+		SlipstreamGameState->UpdateTopScore(AttackerPlayerState);
 	}
 	
 	if (EliminatedPlayer && EliminatedPlayerState)
