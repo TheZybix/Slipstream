@@ -2,13 +2,25 @@
 
 
 #include "ProjectileBullet.h"
-
+#include "WeaponMovementComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 
-void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	FVector NormalImpulse, const FHitResult& Hit)
+AProjectileBullet::AProjectileBullet()
 {
+	WeaponMovementComponent = CreateDefaultSubobject<UWeaponMovementComponent>(FName("WeaponMovementComponent"));
+	WeaponMovementComponent->bRotationFollowsVelocity = true;
+	WeaponMovementComponent->SetIsReplicated(true);
+}
+
+void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+                              FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (OtherActor == GetOwner())
+	{
+		return;
+	}
+	
 	ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
 	if (OwnerCharacter)
 	{

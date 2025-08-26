@@ -6,6 +6,8 @@
 #include "Projectile.h"
 #include "ProjectileBullet.generated.h"
 
+
+class UWeaponMovementComponent;
 /**
  * 
  */
@@ -14,6 +16,12 @@ class SLIPSTREAM_API AProjectileBullet : public AProjectile
 {
 	GENERATED_BODY()
 
+public:
+	AProjectileBullet();
+
 protected:
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+
+	UPROPERTY(VisibleAnywhere)
+	UWeaponMovementComponent* WeaponMovementComponent;
 };
