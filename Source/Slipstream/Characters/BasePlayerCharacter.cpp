@@ -118,6 +118,9 @@ void ABasePlayerCharacter::PlayReloadMontage()
 	case EWeaponType::EWT_Pistol:
 		MontageToPlay = AssaultRifleMontage;
 		break;
+	case EWeaponType::EWT_SMG:
+		MontageToPlay = AssaultRifleMontage;
+		break;
 
 	case EWeaponType::EWT_Max:
 		return;
