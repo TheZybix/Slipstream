@@ -37,6 +37,10 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 	CameraComponent->SetupAttachment(SpringArmComponent, USpringArmComponent::SocketName);
 	CameraComponent->bUsePawnControlRotation = false;
 
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Attached Grenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
@@ -242,8 +246,17 @@ void ABasePlayerCharacter::PlayHitReactMontage()
 	}
 }
 
+void ABasePlayerCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && GrenadeThrowMontage)
+	{
+		AnimInstance->Montage_Play(GrenadeThrowMontage);
+	}
+}
+
 void ABasePlayerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
-	AController* InstigatorController, AActor* DamageCauser)
+                                         AController* InstigatorController, AActor* DamageCauser)
 {
 	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
 	UpdateHUDHealth();
@@ -340,7 +353,11 @@ void ABasePlayerCharacter::BeginPlay()
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABasePlayerCharacter::ReceiveDamage);
 	}
-	
+
+	if (AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
+	}
 }
 
 void ABasePlayerCharacter::Tick(float DeltaTime)
@@ -611,6 +628,14 @@ void ABasePlayerCharacter::ReloadKeyPressed(const FInputActionValue& Value)
 	}
 }
 
+void ABasePlayerCharacter::GrenadeKeyPressed(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->ThrowGrenade();
+	}
+}
+
 
 void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -628,8 +653,8 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Started, this, &ABasePlayerCharacter::TriggerKeyPressed);
 		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::TriggerKeyPressed);
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::ReloadKeyPressed);
+		EnhancedInputComponent->BindAction(GrenadeThrowAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::GrenadeKeyPressed);
 	}
-
 }
 
 void ABasePlayerCharacter::OnRep_OverlappingWeapon(AWeaponBase* LastWeapon)

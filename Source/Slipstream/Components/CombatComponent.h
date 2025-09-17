@@ -14,6 +14,7 @@ class AWeaponBase;
 class ABasePlayerCharacter;
 class ABasePlayerController;
 class ABasePlayerHUD;
+class AProjectile;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SLIPSTREAM_API UCombatComponent : public UActorComponent
@@ -36,8 +37,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
 
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenadeFinished(const FVector_NetQuantize& Target);
+
 	void JumpToShotgunEnd();
-	
+
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bIsAiming);
@@ -65,6 +72,19 @@ protected:
 	void HandleReload();
 	void UpdateAmmoValues();
 	void UpdateShotgunAmmoValues();
+
+	void ThrowGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProjectile> GrenadeClass;
+
+	void DropEquippedWeapon();
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	void AttachActorToLeftHand(AActor* ActorToAttach);
+	void PlayEquipWeaponSound();
 
 private:
 	ABasePlayerCharacter* Character;
@@ -126,6 +146,8 @@ private:
 	void OnRep_CombatState();
 
 	int32 AmountToReload();
+
+	void ShowAttachedGrenade(bool bShowGrenade);
 
 public:
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }

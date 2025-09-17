@@ -71,6 +71,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	FName RightHandSocket;
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	FName LeftHandSocket;
+
 	/* Enable or disable custom depth for weapon outlines */
 	void EnableCustomDepth(bool bEnable);
 	

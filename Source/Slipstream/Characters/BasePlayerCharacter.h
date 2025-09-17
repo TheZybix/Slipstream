@@ -54,6 +54,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
+	void PlayThrowGrenadeMontage();
 
 
 protected:
@@ -101,6 +102,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	TObjectPtr<UInputAction> ReloadAction;
+
+	UPROPERTY(EditAnywhere, Category = Input)
+	TObjectPtr<UInputAction> GrenadeThrowAction;
 	
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -117,6 +121,7 @@ private:
 	void AimKeyPressed(const FInputActionValue& Value);
 	void TriggerKeyPressed(const FInputActionValue& Value);
 	void ReloadKeyPressed(const FInputActionValue& Value);
+	void GrenadeKeyPressed(const FInputActionValue& Value);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	UWidgetComponent* OverheadWidget;
@@ -154,6 +159,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* ShotgunMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* GrenadeThrowMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* HitReactMontage;
@@ -270,6 +278,9 @@ private:
 	USoundBase* EliminationBotSound;
 
 	bool bIsMappingContextAdded = false;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* AttachedGrenade;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
@@ -295,6 +306,7 @@ public:
 
 	FORCEINLINE bool CheckDisableGameplay() const { return bDisableGameplay; }
 	FORCEINLINE UAnimMontage* GetShotgunMontage() const { return ShotgunMontage; }
+	FORCEINLINE UStaticMeshComponent* GetGrenadeMesh() const { return AttachedGrenade; }
 };
 
 
