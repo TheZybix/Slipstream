@@ -258,6 +258,7 @@ void ABasePlayerCharacter::PlayThrowGrenadeMontage()
 void ABasePlayerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
                                          AController* InstigatorController, AActor* DamageCauser)
 {
+	if (bIsDead) return;
 	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
 	UpdateHUDHealth();
 	PlayHitReactMontage();

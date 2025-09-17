@@ -40,4 +40,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MatchCountdownTimer;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* GrenadeText;
 };

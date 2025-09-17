@@ -24,6 +24,7 @@ public:
 	void SetHUDStoredAmmo(int32 Ammo);
 	void SetHUDMatchCountdown(float CountdownTime);
 	void SetHUDAnnouncementCountdown(float CountdownTime);
+	void SetHUDGrenades(int32 Grenades);
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(Client, Reliable)
@@ -96,4 +97,5 @@ private:
 	float HUDMaxHealth;
 	float HUDScore;
 	int32 HUDDefeat;
+	int32 HUDGrenades;
 };

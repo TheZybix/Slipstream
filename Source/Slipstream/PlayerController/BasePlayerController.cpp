@@ -70,6 +70,12 @@ void ABasePlayerController::PollInit()
 				SetHUDHealth(HUDHealth, HUDMaxHealth);
 				SetHUDScore(HUDScore);
 				SetHUDDefeat(HUDDefeat);
+
+				ABasePlayerCharacter* PlayerCharacter = Cast<ABasePlayerCharacter>(GetPawn());
+				if (PlayerCharacter && PlayerCharacter->GetCombat())
+				{
+					SetHUDGrenades(PlayerCharacter->GetCombat()->GetGrenades());
+				}
 			}
 		}
 	}
@@ -189,6 +195,20 @@ void ABasePlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 		int32 Seconds = CountdownTime - Minutes * 60;
 		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 		PlayerHUD->Announcement->WarmupTime->SetText(FText::FromString(CountdownText));
+	}
+}
+
+void ABasePlayerController::SetHUDGrenades(int32 Grenades)
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->GrenadeText)
+	{
+		FString GrenadeText = FString::Printf(TEXT("%d"), Grenades);
+		PlayerHUD->CharacterOverlay->GrenadeText->SetText(FText::FromString(GrenadeText));
+	}
+	else
+	{
+		HUDGrenades = Grenades;
 	}
 }
 

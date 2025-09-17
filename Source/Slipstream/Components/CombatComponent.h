@@ -149,6 +149,18 @@ private:
 
 	void ShowAttachedGrenade(bool bShowGrenade);
 
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Grenades)
+	int32 Grenades = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxGrenades = 4;
+
+	UFUNCTION()
+	void OnRep_Grenades();
+
+	void UpdateHUDGrenades();
+
 public:
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
+	FORCEINLINE int32 GetGrenades() const { return Grenades; }
 };
