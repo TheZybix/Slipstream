@@ -19,13 +19,27 @@ class SLIPSTREAM_API AHitScanWeapon : public AWeaponBase
 public:
 	virtual void Fire(const FVector& HitTarget) override;
 
-private:
-	UPROPERTY(EditAnywhere)
-	float Damage = 15.f;
-
+protected:
+	FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
+	void WeaponTraceHit(const FVector& HitTarget, const FVector& TraceStart, FHitResult& OutHit);
+	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* HitParticle;
 
 	UPROPERTY(EditAnywhere)
+	float Damage = 15.f;
+
+private: 
+	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticles;
+
+	/* Trace end with scatter */
+	UPROPERTY(EditAnywhere, Category = "Scatter")
+	float DistanceToSphere = 800.f;
+
+	UPROPERTY(EditAnywhere, Category = "Scatter")
+	float SphereRadius = 800.f;
+
+	UPROPERTY(EditAnywhere, Category = "Scatter")
+	bool bUseScatter = false;
 };

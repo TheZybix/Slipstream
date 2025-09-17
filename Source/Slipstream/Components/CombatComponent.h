@@ -8,8 +8,6 @@
 #include "Slipstream/Types/CombatState.h"
 #include "CombatComponent.generated.h"
 
-#define TRACE_LENGTH 80000
-
 enum class ECombatState : uint8;
 enum class EWeaponType : uint8;
 class AWeaponBase;
@@ -34,6 +32,11 @@ public:
 	void SetCombatState(ECombatState NewCombatState);
 
 	void TriggerKeyPressed(bool bPressed);
+
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
+
+	void JumpToShotgunEnd();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -61,6 +64,7 @@ protected:
 
 	void HandleReload();
 	void UpdateAmmoValues();
+	void UpdateShotgunAmmoValues();
 
 private:
 	ABasePlayerCharacter* Character;
@@ -108,7 +112,7 @@ private:
 	FTimerHandle FireTimer;
 	bool CanFire(); 
 	
-	bool bCanFIre = true;
+	bool bCanFire = true;
 
 	void StartFireTimer();
 	void FireTimerFinished();
@@ -123,5 +127,6 @@ private:
 
 	int32 AmountToReload();
 
-public:	
+public:
+	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 };

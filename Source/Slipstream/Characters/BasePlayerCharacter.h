@@ -52,6 +52,9 @@ public:
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShowScope);
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -145,6 +148,12 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* AssaultRifleMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* RocketLauncherMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* ShotgunMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* HitReactMontage;
@@ -285,6 +294,7 @@ public:
 	FORCEINLINE UCombatComponent* GetCombat() const { return CombatComponent; }
 
 	FORCEINLINE bool CheckDisableGameplay() const { return bDisableGameplay; }
+	FORCEINLINE UAnimMontage* GetShotgunMontage() const { return ShotgunMontage; }
 };
 
 

@@ -111,14 +111,22 @@ void ABasePlayerCharacter::PlayReloadMontage()
 	case EWeaponType::EWT_AssaultRifle:
 		MontageToPlay = AssaultRifleMontage;
 		break;
-
 	case EWeaponType::EWT_RocketLauncher:
-		MontageToPlay = AssaultRifleMontage;
+		MontageToPlay = RocketLauncherMontage;
 		break;
 	case EWeaponType::EWT_Pistol:
 		MontageToPlay = AssaultRifleMontage;
 		break;
 	case EWeaponType::EWT_SMG:
+		MontageToPlay = AssaultRifleMontage;
+		break;
+	case EWeaponType::EWT_Shotgun:
+		MontageToPlay = ShotgunMontage;
+		break;
+	case EWeaponType::EWT_SniperRifle:
+		MontageToPlay = AssaultRifleMontage;
+		break;
+	case EWeaponType::EWT_GrenadeLauncher:
 		MontageToPlay = AssaultRifleMontage;
 		break;
 
@@ -207,6 +215,7 @@ void ABasePlayerCharacter::MulticastElim_Implementation()
 	{
 		UGameplayStatics::SpawnSoundAtLocation(this, EliminationBotSound, GetActorLocation());
 	}
+	if (IsLocallyControlled() && CombatComponent && CombatComponent->bAiming && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle) ShowSniperScopeWidget(false);
 }
 
 void ABasePlayerCharacter::ElimTimerFinished()

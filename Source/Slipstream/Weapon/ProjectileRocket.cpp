@@ -3,7 +3,6 @@
 
 #include "ProjectileRocket.h"
 #include "Kismet/GameplayStatics.h"
-#include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "NiagaraSystemInstanceController.h"
 #include "Components/BoxComponent.h"
@@ -13,9 +12,9 @@
 
 AProjectileRocket::AProjectileRocket()
 {
-	RocketMesh = CreateDefaultSubobject<UStaticMeshComponent>("RocketMesh");
-	RocketMesh->SetupAttachment(RootComponent);
-	RocketMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>("RocketMesh");
+	ProjectileMesh->SetupAttachment(RootComponent);
+	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 
 	WeaponMovementComponent = CreateDefaultSubobject<UWeaponMovementComponent>(FName("WeaponMovementComponent"));
@@ -27,10 +26,7 @@ void AProjectileRocket::BeginPlay()
 {
 	Super::BeginPlay();
 	bDestroyImmediately = false;
-	if (TrailSystem)
-	{
-		TrailComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(TrailSystem, GetRootComponent(), FName(), GetActorLocation(), GetActorRotation(), EAttachLocation::KeepWorldPosition, false);
-	}
+	
 	if (ProjectileLoop && LoopingSoundAttenuation)
 	{
 		ProjectileLoopComponent = UGameplayStatics::SpawnSoundAttached(ProjectileLoop, GetRootComponent(), FName(), GetActorLocation(), EAttachLocation::KeepWorldPosition, false, 1.f, 1.f, 0.f, LoopingSoundAttenuation, (USoundConcurrency*)nullptr, false);
@@ -44,22 +40,13 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 		return;
 	}
 	
-	APawn* FiringPawn = GetInstigator();
-	if (FiringPawn && HasAuthority())
-	{
-		AController* FiringController = FiringPawn->GetController();
-		if (FiringController)
-		{
-			UGameplayStatics::ApplyRadialDamageWithFalloff(this, Damage, MinDamage, GetActorLocation(), InnerRadius, OuterRadius,
-															1.f, UDamageType::StaticClass(), TArray<AActor*>(), this, FiringController);
-		}
-	}
+	ExplodeDamage();
 	
 	// DRAW DEBUG SPHERES, DISABLE PROJECTILE DESTROY TO VISUALIZE DAMAGE RADIUS
 	/* DrawDebugSphere(GetWorld(), GetActorLocation(), InnerRadius, 8, FColor::Red, false, 10.f);
 	DrawDebugSphere(GetWorld(), GetActorLocation(), OuterRadius, 8, FColor::Blue, false, 10.f); */
 
-	GetWorldTimerManager().SetTimer(DestroyTimer, this, &AProjectileRocket::DestroyTimerFinished, DestroyTime, false);
+	StartDestroyTimer();
 	if (ProjectileLoopComponent && ProjectileLoopComponent->IsPlaying())
 	{
 		ProjectileLoopComponent->Stop();
@@ -72,12 +59,7 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 void AProjectileRocket::MulticastHit_Implementation(UParticleSystem* ImpactParticle)
 {
 	Super::MulticastHit_Implementation(ImpactParticle);
-	if (RocketMesh) RocketMesh->SetVisibility(false);
+	if (ProjectileMesh) ProjectileMesh->SetVisibility(false);
 	if (CollisionBox) CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	if (TrailComponent && TrailComponent->GetSystemInstanceController()) TrailComponent->GetSystemInstanceController()->Deactivate();
-}
-
-void AProjectileRocket::DestroyTimerFinished()
-{
-	Destroy();
 }

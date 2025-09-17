@@ -11,6 +11,8 @@ class UProjectileMovementComponent;
 class UParticleSystem;
 class UParticleSystemComponent;
 class USoundCue;
+class UNiagaraSystem;
+class UNiagaraComponent;
 
 UCLASS()
 class SLIPSTREAM_API AProjectile : public AActor
@@ -22,6 +24,10 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	void StartDestroyTimer();
+	virtual void DestroyTimerFinished();
+	void ExplodeDamage();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastHit(UParticleSystem* ImpactParticle);
@@ -49,11 +55,37 @@ protected:
 
 	bool bDestroyImmediately = true;
 
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* TrailSystem;
+
+	UPROPERTY()
+	UNiagaraComponent* TrailComponent;
+
+	void SpawnTrailSystem();
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* ProjectileMesh;
+
+	UPROPERTY(EditDefaultsOnly)
+	float MinDamage = 25.f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float InnerRadius = 150.f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float OuterRadius = 500.f;
+
 private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* Tracer;
 
+	UPROPERTY()
 	UParticleSystemComponent* TracerComponent;
+
+	FTimerHandle DestroyTimer;
+
+	UPROPERTY(EditAnywhere)
+	float DestroyTime = 3.f;
 
 public:	
 

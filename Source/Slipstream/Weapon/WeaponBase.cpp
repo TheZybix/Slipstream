@@ -9,7 +9,9 @@
 #include "Net/UnrealNetwork.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Slipstream/Components/CombatComponent.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
+#include "Slipstream/Types/WeaponTypes.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -24,6 +26,9 @@ AWeaponBase::AWeaponBase()
 	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_PURPLE);
+	WeaponMesh->MarkRenderStateDirty();
+	EnableCustomDepth(true);
 
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
@@ -32,6 +37,14 @@ AWeaponBase::AWeaponBase()
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
+}
+
+void AWeaponBase::EnableCustomDepth(bool bEnable)
+{
+	if (WeaponMesh)
+	{
+		WeaponMesh->SetRenderCustomDepth(bEnable);
+	}
 }
 
 void AWeaponBase::BeginPlay()
@@ -50,7 +63,6 @@ void AWeaponBase::BeginPlay()
 		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::OnSphereOverlap);
 		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeaponBase::OnSphereEndOverlap);
 	}
-	
 }
 
 void AWeaponBase::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -112,12 +124,22 @@ void AWeaponBase::SpendRound()
 
 void AWeaponBase::OnRep_Ammo()
 {
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter && OwnerCharacter->GetCombat() && IsFull())
+	{
+		OwnerCharacter->GetCombat()->JumpToShotgunEnd();
+	}
 	SetHUDAmmo();
 }
 
 void AWeaponBase::OnRep_StoredAmmo()
 {
 	SetHUDStoredAmmo();
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter && OwnerCharacter->GetCombat() && OwnerCharacter->GetCombat()->GetCombatState() == ECombatState::ECS_Reloading && StoredAmmo == 0 && WeaponType == EWeaponType::EWT_Shotgun)
+	{
+		OwnerCharacter->GetCombat()->JumpToShotgunEnd();
+	}
 }
 
 void AWeaponBase::SetWeaponState(EWeaponState State)
@@ -131,6 +153,7 @@ void AWeaponBase::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		EnableCustomDepth(false);
 		break;
 
 	case EWeaponState::EWS_Dropped:
@@ -139,6 +162,7 @@ void AWeaponBase::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		WeaponMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+		EnableCustomDepth(true);
 		break;
 	}
 }
@@ -152,6 +176,7 @@ void AWeaponBase::OnRep_WeaponState()
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		EnableCustomDepth(false);
 		break;
 		
 	case EWeaponState::EWS_Dropped:
@@ -160,6 +185,7 @@ void AWeaponBase::OnRep_WeaponState()
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		WeaponMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+		EnableCustomDepth(true);
 		break;
 	}
 }
@@ -235,4 +261,9 @@ void AWeaponBase::Dropped()
 bool AWeaponBase::IsEmpty()
 {
 	return Ammo <= 0;
+}
+
+bool AWeaponBase::IsFull()
+{
+	return Ammo == MagCapacity;
 }

@@ -12,6 +12,7 @@
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "Slipstream/HUD/BasePlayerHUD.h"
 #include "TimerManager.h"
+#include "Slipstream/Types/WeaponTypes.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -124,6 +125,27 @@ void UCombatComponent::UpdateAmmoValues()
 	}
 }
 
+void UCombatComponent::UpdateShotgunAmmoValues()
+{
+	if (EquippedWeapon == nullptr) return;
+	int32 NewStoredAmmo = FMath::Clamp(EquippedWeapon->GetStoredAmmo() - 1, 0,EquippedWeapon->GetStoredAmmo());
+
+	EquippedWeapon->SetStoredAmmo(NewStoredAmmo);
+	EquippedWeapon->AddAmmo(-1);
+	bCanFire = true;
+	
+	PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Character->Controller) : PlayerController;
+	if (PlayerController)
+	{
+		PlayerController->SetHUDStoredAmmo(NewStoredAmmo);
+		PlayerController->SetHUDWeaponAmmo(EquippedWeapon->GetMagAmmo());
+	}
+	if (EquippedWeapon->IsFull() || EquippedWeapon->GetStoredAmmo() == 0)
+	{
+		JumpToShotgunEnd();
+	}
+}
+
 void UCombatComponent::ServerReload_Implementation()
 {
 	if (Character == nullptr || EquippedWeapon == nullptr) return;
@@ -159,9 +181,11 @@ int32 UCombatComponent::AmountToReload()
 
 void UCombatComponent::SetAiming(bool bIsAiming)
 {
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
 	bAiming = bIsAiming;
 	ServerSetAiming(bIsAiming);
 	if (Character) Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
+	if (Character->IsLocallyControlled() && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle) Character->ShowSniperScopeWidget(bAiming);
 }
 
 void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
@@ -195,6 +219,20 @@ void UCombatComponent::TriggerKeyPressed(bool bPressed)
 	}
 }
 
+void UCombatComponent::ShotgunShellReload()
+{
+	if (Character && Character->HasAuthority())	UpdateShotgunAmmoValues();
+}
+
+void UCombatComponent::JumpToShotgunEnd()
+{
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
+	if (AnimInstance && Character->GetShotgunMontage())
+	{
+		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
+	}
+}
+
 void UCombatComponent::StartFireTimer()
 {
 	if (EquippedWeapon == nullptr || Character == nullptr) return;
@@ -204,7 +242,7 @@ void UCombatComponent::StartFireTimer()
 void UCombatComponent::FireTimerFinished()
 {
 	if (EquippedWeapon == nullptr) return;
-	bCanFIre = true;
+	bCanFire = true;
 	if (bTriggerKeyPressed && EquippedWeapon->bAutomatic) Fire();
 	if (EquippedWeapon->IsEmpty())
 	{
@@ -216,7 +254,7 @@ void UCombatComponent::Fire()
 {
 	if (CanFire())
 	{
-		bCanFIre = false;
+		bCanFire = false;
 		ServerFire(HitTarget);
 
 		if (EquippedWeapon)
@@ -236,7 +274,13 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (!EquippedWeapon) return;
-		
+	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		Character->PlayFireMontage(bAiming);
+		EquippedWeapon->Fire(TraceHitTarget);
+		CombatState = ECombatState::ECS_Unoccupied;
+		return;
+	}
 	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bAiming);
@@ -352,7 +396,8 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
-	return bCanFIre && !EquippedWeapon->IsEmpty() && CombatState == ECombatState::ECS_Unoccupied;
+	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
+	return bCanFire && !EquippedWeapon->IsEmpty() && CombatState == ECombatState::ECS_Unoccupied;
 }
 
 void UCombatComponent::InterpolateFOV(float DeltaTime)

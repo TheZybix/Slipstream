@@ -70,6 +70,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	FName RightHandSocket;
+
+	/* Enable or disable custom depth for weapon outlines */
+	void EnableCustomDepth(bool bEnable);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -151,4 +154,5 @@ public:
 	FORCEINLINE int32 GetMagAmmo() const { return Ammo; }
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 	bool IsEmpty();
+	bool IsFull();
 };
