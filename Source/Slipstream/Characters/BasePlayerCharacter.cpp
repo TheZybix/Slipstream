@@ -697,10 +697,10 @@ void ABasePlayerCharacter::TurnInPlace(float DeltaTime)
 	}
 }
 
-void ABasePlayerCharacter::OnRep_Health()
+void ABasePlayerCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHUDHealth();
-	PlayHitReactMontage();
+	if (Health < LastHealth) PlayHitReactMontage();
 }
 
 void ABasePlayerCharacter::UpdateDissolveMaterial(float DissolveValue)

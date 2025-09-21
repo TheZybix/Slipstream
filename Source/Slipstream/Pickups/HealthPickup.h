@@ -7,9 +7,11 @@
 #include "HealthPickup.generated.h"
 
 class UNiagaraComponent;
+class UNiagaraSystem;
 /**
  * 
  */
+
 UCLASS()
 class SLIPSTREAM_API AHealthPickup : public APickup
 {

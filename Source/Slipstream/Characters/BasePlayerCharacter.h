@@ -57,6 +57,7 @@ public:
 	void ShowSniperScopeWidget(bool bShowScope);
 	void PlayThrowGrenadeMontage();
 
+	void UpdateHUDHealth();
 
 protected:
 	// Called when the game starts or when spawned
@@ -70,7 +71,6 @@ protected:
 
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
-	void UpdateHUDHealth();
 	
 	/* Poll for any relevant classes and initialize HUD */
 	void PollInit();
@@ -198,7 +198,7 @@ private:
 	ABasePlayerController* PlayerController;
 
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float LastHealth);
 
 	bool bIsDead = false;
 
@@ -303,10 +303,12 @@ public:
 	FORCEINLINE bool IsDead() const { return bIsDead; }
 
 	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 
 	ECombatState GetCombatState() const;
 	FORCEINLINE UCombatComponent* GetCombat() const { return CombatComponent; }
+	FORCEINLINE UBuffComponent* GetBuff() const { return BuffComponent; }
 
 	FORCEINLINE bool CheckDisableGameplay() const { return bDisableGameplay; }
 	FORCEINLINE UAnimMontage* GetShotgunMontage() const { return ShotgunMontage; }

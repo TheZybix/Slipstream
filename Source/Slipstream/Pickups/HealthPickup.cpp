@@ -6,6 +6,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
+#include "Slipstream/Components/BuffComponent.h"
 
 AHealthPickup::AHealthPickup()
 {
@@ -28,7 +29,11 @@ void AHealthPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	ABasePlayerCharacter* PlayerCharacter = Cast<ABasePlayerCharacter>(OtherActor);
 	if (PlayerCharacter)
 	{
-		
+		UBuffComponent* Buff = PlayerCharacter->GetBuff();
+		if (Buff)
+		{
+			Buff->Heal(HealAmount, HealingTime);
+		}
 	}
 	Destroy();
 }
