@@ -30,7 +30,7 @@ class SLIPSTREAM_API ABasePlayerCharacter : public ACharacter, public IInteractW
 public:
 	ABasePlayerCharacter();
 	void InitializeMappingContext();
-
+	
 	virtual void Destroyed() override;
 	virtual void Restart() override;
 
@@ -199,8 +199,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "PlayerStats")
 	float MaxShield = 50.f;
 	
-	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "PlayerStats")
-	float Shield = 50.f;
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, EditAnywhere, Category = "PlayerStats")
+	float Shield = 0.f;
 
 	UPROPERTY()
 	ABasePlayerController* PlayerController;
@@ -316,6 +316,10 @@ public:
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+
+	FORCEINLINE float GetShield() const { return Shield; }
+	FORCEINLINE void SetShield(float Amount) { Shield = Amount; }
+	FORCEINLINE float GetMaxShield() const { return MaxShield; }
 
 	ECombatState GetCombatState() const;
 	FORCEINLINE UCombatComponent* GetCombat() const { return CombatComponent; }

@@ -24,6 +24,13 @@ void UBuffComponent::Heal(float HealAmount, float HealTime)
 	bHealing = true;
 }
 
+void UBuffComponent::Shield(float ShieldAmount, float ShieldTime)
+{
+	ShieldingRate = ShieldAmount / ShieldTime;
+	AmountToShield += ShieldAmount;
+	bShielding = true;
+}
+
 void UBuffComponent::SetInitialSpeeds(float BaseSpeed, float CrouchSpeed)
 {
 	InitialBaseSpeed = BaseSpeed;
@@ -83,6 +90,20 @@ void UBuffComponent::HealRampUp(float DeltaTime)
 	}
 }
 
+void UBuffComponent::ShieldRampUp(float DeltaTime)
+{
+	if (!bShielding || Character == nullptr || Character->IsDead()) return;
+	const float ShieldThisFrame = ShieldingRate * DeltaTime;
+	Character->SetShield(FMath::Clamp(Character->GetShield() + ShieldThisFrame, 0.f, Character->GetMaxShield()));
+	Character->UpdateHUDShield();
+	AmountToShield -= ShieldThisFrame;
+	if (AmountToShield <= 0.f || Character->GetShield() >= Character->GetMaxShield())
+	{
+		AmountToShield = 0.f;
+		bShielding = false;
+	}
+}
+
 void UBuffComponent::BuffJumpVelocity(float BuffJumpVelocity, float BuffTime)
 {
 	if (Character == nullptr) return;
@@ -117,5 +138,6 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	HealRampUp(DeltaTime);
+	ShieldRampUp(DeltaTime);
 }
 

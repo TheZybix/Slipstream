@@ -18,6 +18,7 @@ public:
 	friend class ABasePlayerCharacter;
 
 	void Heal(float HealAmount, float HealTime);
+	void Shield(float ShieldAmount, float ShieldTime);
 	void BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime);
 	void SetInitialSpeeds(float BaseSpeed, float CrouchSpeed);
 
@@ -28,6 +29,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	void HealRampUp(float DeltaTime);
+	void ShieldRampUp(float DeltaTime);
 
 private:
 	UPROPERTY()
@@ -37,6 +39,11 @@ private:
 	bool bHealing = false;
 	float HealingRate = 0.f;
 	float AmountToHeal = 0.f;
+
+	// Shield Pickup
+	bool bShielding = false;
+	float ShieldingRate = 0.f;
+	float AmountToShield = 0.f;
 
 	//Speed Pickup
 	FTimerHandle SpeedBuffTimer;
