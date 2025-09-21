@@ -45,6 +45,8 @@ public:
 
 	void JumpToShotgunEnd();
 
+	void PickupAmmo(TMap<EWeaponType, int32> Ammo);
+
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bIsAiming);

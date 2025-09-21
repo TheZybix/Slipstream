@@ -21,6 +21,7 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Slipstream/Components/BuffComponent.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
 #include "Slipstream/Types/WeaponTypes.h"
 
@@ -49,6 +50,9 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat"));
 	CombatComponent->SetIsReplicated(true);
+
+	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("Buff"));
+	BuffComponent->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 1000.f);
@@ -88,6 +92,7 @@ void ABasePlayerCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	if (CombatComponent) CombatComponent->Character = this;
+	if (BuffComponent) BuffComponent->Character = this;
 }
 
 void ABasePlayerCharacter::PlayFireMontage(bool bAiming)

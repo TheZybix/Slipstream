@@ -124,6 +124,9 @@ private:
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_StoredAmmo)
 	int32 StoredAmmo;
 
+	UPROPERTY(EditAnywhere)
+	int32 StoredMaxAmmo;
+
 	UFUNCTION()
 	void OnRep_Ammo();
 
@@ -156,6 +159,7 @@ public:
 	FORCEINLINE void SetStoredAmmo(int32 NewStoredAmmo) { StoredAmmo = NewStoredAmmo; }
 	FORCEINLINE int32 GetMagAmmo() const { return Ammo; }
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
+	FORCEINLINE int32 GetStoredMaxAmmo() const { return StoredMaxAmmo; }
 	bool IsEmpty();
 	bool IsFull();
 };

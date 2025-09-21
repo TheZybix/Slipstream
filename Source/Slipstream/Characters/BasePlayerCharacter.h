@@ -12,6 +12,7 @@
 
 enum class ECombatState : uint8;
 class UCombatComponent;
+class UBuffComponent;
 class AWeaponBase;
 class UInputMappingContext;
 class UInputAction;
@@ -134,6 +135,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true), Category = "Combat")
 	UCombatComponent* CombatComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	UBuffComponent* BuffComponent;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipKeyPressed();
