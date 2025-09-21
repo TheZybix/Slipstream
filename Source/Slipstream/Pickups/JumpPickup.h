@@ -4,28 +4,23 @@
 
 #include "CoreMinimal.h"
 #include "Pickup.h"
-#include "HealthPickup.generated.h"
+#include "JumpPickup.generated.h"
 
 /**
  * 
  */
-
 UCLASS()
-class SLIPSTREAM_API AHealthPickup : public APickup
+class SLIPSTREAM_API AJumpPickup : public APickup
 {
 	GENERATED_BODY()
-
-public:
-	AHealthPickup();
 
 protected:
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 
 private:
+	UPROPERTY(EditAnywhere)
+	float JumpVelocityBuff = 1600.f;
 	
 	UPROPERTY(EditAnywhere)
-	float HealAmount;
-
-	UPROPERTY(EditAnywhere)
-	float HealingTime = 2.5f;
+	float JumpBuffTime;
 };

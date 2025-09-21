@@ -18,6 +18,7 @@ class SLIPSTREAM_API ABasePlayerController : public APlayerController
 	GENERATED_BODY()
 public:
 	void SetHUDHealth(float Health, float MaxHealth);
+	void SetHUDShield(float Shield, float MaxShield);
 	void SetHUDScore(float Score);
 	void SetHUDDefeat(int Defeat);
 	void SetHUDWeaponAmmo(int32 Ammo);
@@ -91,10 +92,16 @@ private:
 	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
 	
-	bool bInitializeCharacterOverlay = false;
+	bool bInitializeHealth = false;
+	bool bInitializeShield = false;
+	bool bInitializeScore = false;
+	bool bInitializeDefeat = false;
+	bool bInitializeGrenades = false;
 
 	float HUDHealth;
 	float HUDMaxHealth;
+	float HUDShield;
+	float HUDMaxShield;
 	float HUDScore;
 	int32 HUDDefeat;
 	int32 HUDGrenades;

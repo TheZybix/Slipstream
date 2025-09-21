@@ -58,6 +58,7 @@ public:
 	void PlayThrowGrenadeMontage();
 
 	void UpdateHUDHealth();
+	void UpdateHUDShield();
 
 protected:
 	// Called when the game starts or when spawned
@@ -194,11 +195,21 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "PlayerStats")
 	float Health = 100.f;
 
+	/* Player shield */
+	UPROPERTY(EditAnywhere, Category = "PlayerStats")
+	float MaxShield = 50.f;
+	
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "PlayerStats")
+	float Shield = 50.f;
+
 	UPROPERTY()
 	ABasePlayerController* PlayerController;
 
 	UFUNCTION()
 	void OnRep_Health(float LastHealth);
+
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);
 
 	bool bIsDead = false;
 

@@ -18,6 +18,11 @@ public:
 	friend class ABasePlayerCharacter;
 
 	void Heal(float HealAmount, float HealTime);
+	void BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime);
+	void SetInitialSpeeds(float BaseSpeed, float CrouchSpeed);
+
+	void BuffJumpVelocity(float BuffJumpVelocity, float BuffTime);
+	void SetInitialJumpVelocity(float BaseJumpVelocity);
 
 protected:
 	virtual void BeginPlay() override;
@@ -28,12 +33,29 @@ private:
 	UPROPERTY()
 	ABasePlayerCharacter* Character;
 
+	// Health Pickup
 	bool bHealing = false;
 	float HealingRate = 0.f;
 	float AmountToHeal = 0.f;
 
+	//Speed Pickup
+	FTimerHandle SpeedBuffTimer;
+	void ResetSpeeds();
+	float InitialBaseSpeed;
+	float InitialCrouchSpeed;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSpeedBuff(float BaseSpeed, float CrouchSpeed);
+
+	//Jump Pickup
+
+	FTimerHandle JumpBuffTimer;
+	void ResetJump();
+	float InitialJumpVelocity;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastJumpVelocity(float JumpVelocity);
+
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-		
 };

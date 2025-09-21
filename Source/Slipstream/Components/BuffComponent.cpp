@@ -2,6 +2,8 @@
 
 
 #include "BuffComponent.h"
+
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
 
 UBuffComponent::UBuffComponent()
@@ -10,11 +12,60 @@ UBuffComponent::UBuffComponent()
 	
 }
 
+void UBuffComponent::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void UBuffComponent::Heal(float HealAmount, float HealTime)
 {
 	HealingRate = HealAmount / HealTime;
 	AmountToHeal += HealAmount;
 	bHealing = true;
+}
+
+void UBuffComponent::SetInitialSpeeds(float BaseSpeed, float CrouchSpeed)
+{
+	InitialBaseSpeed = BaseSpeed;
+	InitialCrouchSpeed = CrouchSpeed;
+}
+
+void UBuffComponent::SetInitialJumpVelocity(float BaseJumpVelocity)
+{
+	InitialJumpVelocity = BaseJumpVelocity;
+}
+
+void UBuffComponent::BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime)
+{
+	if (Character == nullptr) return;
+	Character->GetWorldTimerManager().SetTimer(SpeedBuffTimer, this, &UBuffComponent::ResetSpeeds, BuffTime);
+	if (Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = BuffBaseSpeed;
+		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = BuffCrouchSpeed;
+	}
+	MulticastSpeedBuff(BuffBaseSpeed, BuffCrouchSpeed);
+}
+
+void UBuffComponent::ResetSpeeds()
+{
+	if (Character == nullptr) return;
+	if (Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = InitialBaseSpeed;
+		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = InitialCrouchSpeed;
+	}
+	MulticastSpeedBuff(InitialBaseSpeed, InitialCrouchSpeed);
+}
+
+void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float CrouchSpeed)
+{
+	if (Character == nullptr) return;
+	if (Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed;
+		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
+	}
 }
 
 void UBuffComponent::HealRampUp(float DeltaTime)
@@ -32,11 +83,34 @@ void UBuffComponent::HealRampUp(float DeltaTime)
 	}
 }
 
-void UBuffComponent::BeginPlay()
+void UBuffComponent::BuffJumpVelocity(float BuffJumpVelocity, float BuffTime)
 {
-	Super::BeginPlay();
+	if (Character == nullptr) return;
+	Character->GetWorldTimerManager().SetTimer(JumpBuffTimer, this, &UBuffComponent::ResetJump, BuffTime);
+	if (Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = BuffJumpVelocity;
+	}
+	MulticastJumpVelocity(BuffJumpVelocity);
+}
 
-	
+void UBuffComponent::ResetJump()
+{
+	if (Character == nullptr) return;
+	if (Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = InitialJumpVelocity;
+	}
+	MulticastJumpVelocity(InitialJumpVelocity);
+}
+
+void UBuffComponent::MulticastJumpVelocity_Implementation(float JumpVelocity)
+{
+	if (Character == nullptr) return;
+	if (Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = JumpVelocity;
+	}
 }
 
 void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

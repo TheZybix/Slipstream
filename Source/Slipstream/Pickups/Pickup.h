@@ -9,6 +9,8 @@
 class USphereComponent;
 class USoundBase;
 class UStaticMeshComponent;
+class UNiagaraComponent;
+class UNiagaraSystem;
 
 UCLASS()
 class SLIPSTREAM_API APickup : public AActor
@@ -28,6 +30,12 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float BaseTurnRate = 45.f;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraComponent* PickupEffectComponent;
+	
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* PickupEffectSystem;
 
 private:
 	UPROPERTY(EditAnywhere)

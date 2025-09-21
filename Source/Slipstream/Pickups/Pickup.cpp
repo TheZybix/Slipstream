@@ -3,6 +3,8 @@
 
 #include "Pickup.h"
 
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
@@ -24,6 +26,9 @@ APickup::APickup()
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PickupMesh"));
 	PickupMesh->SetupAttachment(RootComponent);
 	PickupMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	PickupEffectComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("PickupEffect"));
+	PickupEffectComponent->SetupAttachment(RootComponent);
 }
 
 
@@ -49,6 +54,7 @@ void APickup::Destroyed()
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
 	}
+	if (PickupEffectSystem)	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, PickupEffectSystem, GetActorLocation(), GetActorRotation());
 }
 
 void APickup::Tick(float DeltaTime)

@@ -78,6 +78,7 @@ void ABasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME_CONDITION(ABasePlayerCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ABasePlayerCharacter, Health);
+	DOREPLIFETIME(ABasePlayerCharacter, Shield);
 	DOREPLIFETIME(ABasePlayerCharacter, bDisableGameplay)
 }
 
@@ -92,7 +93,12 @@ void ABasePlayerCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	if (CombatComponent) CombatComponent->Character = this;
-	if (BuffComponent) BuffComponent->Character = this;
+	if (BuffComponent)
+	{
+		BuffComponent->Character = this;
+		BuffComponent->SetInitialSpeeds(GetCharacterMovement()->MaxWalkSpeed, GetCharacterMovement()->MaxWalkSpeedCrouched);
+		BuffComponent->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
+	}
 }
 
 void ABasePlayerCharacter::PlayFireMontage(bool bAiming)
@@ -264,8 +270,28 @@ void ABasePlayerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, con
                                          AController* InstigatorController, AActor* DamageCauser)
 {
 	if (bIsDead) return;
-	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+
+	// Subtract damage from shield first
+	float DamageToHealth = Damage;
+	if (Shield > 0.f)
+	{
+		if (Shield >= Damage)
+		{
+			Shield = FMath::Clamp(Shield - Damage, 0.f, MaxShield);
+			DamageToHealth = 0.f;
+		}
+		else if (Shield < Damage)
+		{
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0.f, Damage);
+			Shield = 0.f;
+		}
+	}
+	
+	Health = FMath::Clamp(Health - DamageToHealth, 0.0f, MaxHealth);
+
+
 	UpdateHUDHealth();
+	UpdateHUDShield();
 	PlayHitReactMontage();
 
 	if (Health == 0.f)
@@ -287,6 +313,15 @@ void ABasePlayerCharacter::UpdateHUDHealth()
 	if (PlayerController)
 	{
 		PlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void ABasePlayerCharacter::UpdateHUDShield()
+{
+	PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
+	if (PlayerController)
+	{
+		PlayerController->SetHUDShield(Shield, MaxShield);
 	}
 }
 
@@ -355,6 +390,7 @@ void ABasePlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 	
 	UpdateHUDHealth();
+	UpdateHUDShield();
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABasePlayerCharacter::ReceiveDamage);
@@ -701,6 +737,12 @@ void ABasePlayerCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHUDHealth();
 	if (Health < LastHealth) PlayHitReactMontage();
+}
+
+void ABasePlayerCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateHUDShield();
+	if (Shield < LastShield) PlayHitReactMontage();
 }
 
 void ABasePlayerCharacter::UpdateDissolveMaterial(float DissolveValue)
