@@ -37,4 +37,5 @@ protected:
 	UWeaponMovementComponent* WeaponMovementComponent;
 
 private:
+	
 };

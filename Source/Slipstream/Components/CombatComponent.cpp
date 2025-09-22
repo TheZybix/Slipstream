@@ -345,9 +345,9 @@ void UCombatComponent::JumpToShotgunEnd()
 
 void UCombatComponent::PickupAmmo(TMap<EWeaponType, int32> Ammo)
 {
-	int32 AmmoAmount = Ammo[EquippedWeapon->GetWeaponType()];
 	if (EquippedWeapon)
 	{
+		int32 AmmoAmount = Ammo[EquippedWeapon->GetWeaponType()];
 		EquippedWeapon->SetStoredAmmo(FMath::Clamp(EquippedWeapon->GetStoredAmmo() + AmmoAmount, 0, EquippedWeapon->GetStoredMaxAmmo()));
 		EquippedWeapon->SetHUDStoredAmmo();
 		PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Character->Controller) : PlayerController;

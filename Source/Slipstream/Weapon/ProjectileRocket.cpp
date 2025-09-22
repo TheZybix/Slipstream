@@ -26,7 +26,7 @@ void AProjectileRocket::BeginPlay()
 {
 	Super::BeginPlay();
 	bDestroyImmediately = false;
-	
+	SpawnTrailSystem();
 	if (ProjectileLoop && LoopingSoundAttenuation)
 	{
 		ProjectileLoopComponent = UGameplayStatics::SpawnSoundAttached(ProjectileLoop, GetRootComponent(), FName(), GetActorLocation(), EAttachLocation::KeepWorldPosition, false, 1.f, 1.f, 0.f, LoopingSoundAttenuation, (USoundConcurrency*)nullptr, false);
