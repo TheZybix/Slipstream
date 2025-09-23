@@ -59,6 +59,7 @@ public:
 
 	void UpdateHUDHealth();
 	void UpdateHUDShield();
+	void UpdateHUDAmmo();
 
 protected:
 	// Called when the game starts or when spawned

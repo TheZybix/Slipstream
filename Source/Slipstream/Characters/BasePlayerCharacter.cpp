@@ -176,7 +176,11 @@ void ABasePlayerCharacter::Elim()
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABasePlayerCharacter::ElimTimerFinished, ElimDelay);
 	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
-		CombatComponent->EquippedWeapon->Dropped();
+		if (CombatComponent->EquippedWeapon->bDestroyWeapon) CombatComponent->EquippedWeapon->Destroy();
+		else CombatComponent->EquippedWeapon->Dropped();
+
+		if (CombatComponent->SecondaryWeapon && CombatComponent->SecondaryWeapon->bDestroyWeapon) CombatComponent->SecondaryWeapon->Destroy();
+		else if (CombatComponent->SecondaryWeapon) CombatComponent->SecondaryWeapon->Dropped();
 	}
 }
 
@@ -322,6 +326,16 @@ void ABasePlayerCharacter::UpdateHUDShield()
 	if (PlayerController)
 	{
 		PlayerController->SetHUDShield(Shield, MaxShield);
+	}
+}
+
+void ABasePlayerCharacter::UpdateHUDAmmo()
+{
+	PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
+	if (PlayerController && CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		PlayerController->SetHUDWeaponAmmo(CombatComponent->EquippedWeapon->GetMagAmmo());
+		PlayerController->SetHUDStoredAmmo(CombatComponent->EquippedWeapon->GetStoredAmmo());
 	}
 }
 
@@ -622,8 +636,7 @@ void ABasePlayerCharacter::EquipKeyPressed(const FInputActionValue& Value)
 	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
-		if (HasAuthority())	CombatComponent->EquipWeapon(OverlappingWeapon);
-		else ServerEquipKeyPressed();
+		ServerEquipKeyPressed();
 	}
 }
 
@@ -632,7 +645,8 @@ void ABasePlayerCharacter::ServerEquipKeyPressed_Implementation()
 	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
-		CombatComponent->EquipWeapon(OverlappingWeapon);
+		if (OverlappingWeapon) CombatComponent->EquipWeapon(OverlappingWeapon);
+		else if (CombatComponent->ShouldSwapWeapons()) CombatComponent->SwapWeapon();
 	}
 }
 
@@ -688,7 +702,7 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::JumpKeyPressed);
-		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::EquipKeyPressed);
+		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Started, this, &ABasePlayerCharacter::EquipKeyPressed);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::CrouchKeyPressed);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::AimKeyPressed);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::AimKeyPressed);

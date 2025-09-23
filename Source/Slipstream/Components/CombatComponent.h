@@ -27,6 +27,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	friend class ABasePlayerCharacter;
 	void EquipWeapon(AWeaponBase* WeaponToEquip);
+	void SwapWeapon();
 	void Reload();
 
 	UFUNCTION(BlueprintCallable)
@@ -47,6 +48,8 @@ public:
 
 	void PickupAmmo(TMap<EWeaponType, int32> Ammo);
 
+	void SpawnDefaultWeapon();
+
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bIsAiming);
@@ -56,6 +59,10 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+
+	UFUNCTION()
+	void OnRep_SecondaryWeapon();
+	
 	void Fire();
 
 	UFUNCTION(Server, Reliable)
@@ -86,7 +93,12 @@ protected:
 	void DropEquippedWeapon();
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	void AttachActorToLeftHand(AActor* ActorToAttach);
-	void PlayEquipWeaponSound();
+	void AttachActorToBack(AActor* ActorToAttach);
+	void PlayEquipWeaponSound(AWeaponBase* WeaponToEquip);
+
+	void EquipPrimaryWeapon(AWeaponBase* WeaponToEquip);
+	void EquipSecondaryWeapon(AWeaponBase* WeaponToEquip);
+
 
 private:
 	ABasePlayerCharacter* Character;
@@ -95,6 +107,9 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeaponBase* EquippedWeapon;
+
+	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
+	AWeaponBase* SecondaryWeapon;
 
 	UPROPERTY(Replicated)
 	bool bAiming;
@@ -162,7 +177,12 @@ private:
 
 	void UpdateHUDGrenades();
 
+	/* Default Weapon */
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeaponBase> DefaultWeapon;
+
 public:
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	FORCEINLINE int32 GetGrenades() const { return Grenades; }
+	bool ShouldSwapWeapons();
 };

@@ -71,6 +71,8 @@ void ABasePlayerController::PollInit()
 				if (!bInitializeShield) SetHUDShield(HUDShield, HUDMaxShield);
 				if (!bInitializeScore) SetHUDScore(HUDScore);
 				if (!bInitializeDefeat) SetHUDDefeat(HUDDefeat);
+				if (!bInitializeMagAmmo) SetHUDWeaponAmmo(HUDMagAmmo);
+				if (!bInitializeStoredAmmo) SetHUDStoredAmmo(HUDStoredAmmo);
 
 				ABasePlayerCharacter* PlayerCharacter = Cast<ABasePlayerCharacter>(GetPawn());
 				if (PlayerCharacter && PlayerCharacter->GetCombat())
@@ -172,6 +174,11 @@ void ABasePlayerController::SetHUDWeaponAmmo(int32 Ammo)
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		PlayerHUD->CharacterOverlay->AmmoAmount->SetText(FText::FromString(AmmoText));
 	}
+	else
+	{
+		HUDMagAmmo = Ammo;
+		bInitializeMagAmmo = true;
+	}
 }
 
 void ABasePlayerController::SetHUDStoredAmmo(int32 Ammo)
@@ -181,6 +188,11 @@ void ABasePlayerController::SetHUDStoredAmmo(int32 Ammo)
 	{
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		PlayerHUD->CharacterOverlay->StoredAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+	else
+	{
+		HUDStoredAmmo = Ammo;
+		bInitializeStoredAmmo = true;
 	}
 }
 

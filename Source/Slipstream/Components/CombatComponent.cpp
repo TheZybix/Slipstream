@@ -12,6 +12,7 @@
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "Slipstream/HUD/BasePlayerHUD.h"
 #include "TimerManager.h"
+#include "Slipstream/GameModes/SlipstreamGameMode.h"
 #include "Slipstream/Types/WeaponTypes.h"
 #include "Slipstream/Weapon/Projectile.h"
 
@@ -27,6 +28,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
+	DOREPLIFETIME(UCombatComponent, SecondaryWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME(UCombatComponent, Grenades);
@@ -44,6 +46,8 @@ void UCombatComponent::BeginPlay()
 			DefaultFOV = Character->GetCameraComponent()->FieldOfView;
 			CurrentFOV = DefaultFOV;
 		}
+		SpawnDefaultWeapon();
+		Character->UpdateHUDAmmo();
 	}
 }
 
@@ -69,7 +73,7 @@ void UCombatComponent::DropEquippedWeapon()
 
 void UCombatComponent::AttachActorToRightHand(AActor* ActorToAttach)
 {
-	if (!EquippedWeapon || !EquippedWeapon->RightHandSocket.IsValid()) return;
+	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr || !EquippedWeapon || !EquippedWeapon->RightHandSocket.IsValid()) return;
 	const USkeletalMeshSocket* HandSocket =  Character->GetMesh()->GetSocketByName(EquippedWeapon->RightHandSocket);
 	if (HandSocket)
 	{
@@ -79,7 +83,7 @@ void UCombatComponent::AttachActorToRightHand(AActor* ActorToAttach)
 
 void UCombatComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 {
-	if (!EquippedWeapon || !EquippedWeapon->LeftHandSocket.IsValid()) return;
+	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr || !EquippedWeapon || !EquippedWeapon->LeftHandSocket.IsValid()) return;
 	const USkeletalMeshSocket* HandSocket =  Character->GetMesh()->GetSocketByName(EquippedWeapon->LeftHandSocket);
 	if (HandSocket)
 	{
@@ -87,14 +91,41 @@ void UCombatComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 	}
 }
 
-void UCombatComponent::PlayEquipWeaponSound()
+void UCombatComponent::AttachActorToBack(AActor* ActorToAttach)
 {
-	if (EquippedWeapon && EquippedWeapon->EquipSound) UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->EquipSound, Character->GetActorLocation());
+	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr || !SecondaryWeapon || !SecondaryWeapon->BackSocket.IsValid()) return;
+	const USkeletalMeshSocket* BackSocket =  Character->GetMesh()->GetSocketByName(SecondaryWeapon->BackSocket);
+	if (BackSocket)
+	{
+		BackSocket->AttachActor(ActorToAttach, Character->GetMesh());
+	}
+}
+
+void UCombatComponent::PlayEquipWeaponSound(AWeaponBase* WeaponToEquip)
+{
+	if (WeaponToEquip && WeaponToEquip->EquipSound) UGameplayStatics::PlaySoundAtLocation(this, WeaponToEquip->EquipSound, Character->GetActorLocation());
 }
 
 void UCombatComponent::EquipWeapon(AWeaponBase* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr || CombatState != ECombatState::ECS_Unoccupied) return;
+
+	if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
+	{
+		EquipSecondaryWeapon(WeaponToEquip);
+	}
+	else
+	{
+		EquipPrimaryWeapon(WeaponToEquip);
+	}
+	
+	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+	Character->bUseControllerRotationYaw = true;
+}
+
+void UCombatComponent::EquipPrimaryWeapon(AWeaponBase* WeaponToEquip)
+{
+	if (WeaponToEquip == nullptr) return;
 	DropEquippedWeapon();
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
@@ -103,14 +134,45 @@ void UCombatComponent::EquipWeapon(AWeaponBase* WeaponToEquip)
 	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->SetHUDAmmo();
 	EquippedWeapon->SetHUDStoredAmmo();
-
+	
 	if (EquippedWeapon->IsEmpty())
 	{
 		Reload();
 	}
-	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-	Character->bUseControllerRotationYaw = true;
-	PlayEquipWeaponSound();
+	PlayEquipWeaponSound(WeaponToEquip);
+	EquippedWeapon->EnableCustomDepth(false);
+}
+
+void UCombatComponent::EquipSecondaryWeapon(AWeaponBase* WeaponToEquip)
+{
+	if (WeaponToEquip == nullptr) return;
+	SecondaryWeapon = WeaponToEquip;
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_Secondary);
+	AttachActorToBack(SecondaryWeapon);
+
+	SecondaryWeapon->SetOwner(Character);
+	PlayEquipWeaponSound(SecondaryWeapon);
+}
+
+void UCombatComponent::SwapWeapon()
+{
+	AWeaponBase* TempWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TempWeapon;
+
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachActorToRightHand(EquippedWeapon);
+	EquippedWeapon->SetHUDAmmo();
+	EquippedWeapon->SetHUDStoredAmmo();
+	PlayEquipWeaponSound(EquippedWeapon);
+	
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_Secondary);
+	AttachActorToBack(SecondaryWeapon);
+}
+
+bool UCombatComponent::ShouldSwapWeapons()
+{
+	return (EquippedWeapon != nullptr && SecondaryWeapon != nullptr);
 }
 
 void UCombatComponent::Reload()
@@ -291,7 +353,20 @@ void UCombatComponent::OnRep_EquippedWeapon()
 		AttachActorToRightHand(EquippedWeapon);
 		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		Character->bUseControllerRotationYaw = true;
-		PlayEquipWeaponSound();
+		PlayEquipWeaponSound(EquippedWeapon);
+		EquippedWeapon->EnableCustomDepth(false);
+		EquippedWeapon->SetHUDAmmo();
+		EquippedWeapon->SetHUDStoredAmmo();
+	}
+}
+
+void UCombatComponent::OnRep_SecondaryWeapon()
+{
+	if (SecondaryWeapon && Character)
+	{
+		SecondaryWeapon->SetWeaponState(EWeaponState::EWS_Secondary);
+		AttachActorToBack(SecondaryWeapon);
+		PlayEquipWeaponSound(SecondaryWeapon);
 	}
 }
 
@@ -356,6 +431,18 @@ void UCombatComponent::PickupAmmo(TMap<EWeaponType, int32> Ammo)
 		{
 			Reload();
 		}
+	}
+}
+
+void UCombatComponent::SpawnDefaultWeapon()
+{
+	ASlipstreamGameMode* SlipstreamGameMode = Cast<ASlipstreamGameMode>(UGameplayStatics::GetGameMode(this));
+	UWorld* World = GetWorld();
+	if (SlipstreamGameMode && World && Character && !Character->IsDead() && DefaultWeapon)
+	{
+		AWeaponBase* StartingWeapon = World->SpawnActor<AWeaponBase>(DefaultWeapon);
+		StartingWeapon->bDestroyWeapon = true;
+		EquipWeapon(StartingWeapon);
 	}
 }
 

@@ -37,7 +37,7 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority())	OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlap);
+	if (HasAuthority()) GetWorldTimerManager().SetTimer(BindOverlapTimer, this, &APickup::BindOverlapTimerFinished, BindOverlapTime);
 }
 
 void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -55,6 +55,11 @@ void APickup::Destroyed()
 		UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
 	}
 	if (PickupEffectSystem)	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, PickupEffectSystem, GetActorLocation(), GetActorRotation());
+}
+
+void APickup::BindOverlapTimerFinished()
+{
+	OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlap);
 }
 
 void APickup::Tick(float DeltaTime)

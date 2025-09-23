@@ -21,6 +21,7 @@ enum class EWeaponState : uint8
 {
 	EWS_Initial UMETA(DisplayName = "Initial"),
 	EWS_Equipped UMETA(DisplayName = "Equipped"),
+	EWS_Secondary UMETA(DisplayName = "Secondary"),
 	EWS_Dropped UMETA(DisplayName = "Dropped"),
 	EWS_Max UMETA(DisplayName = "DefaultMax")
 };
@@ -74,11 +75,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	FName LeftHandSocket;
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	FName BackSocket;
+
 	/* Enable or disable custom depth for weapon outlines */
 	void EnableCustomDepth(bool bEnable);
+
+	bool bDestroyWeapon = false;
 	
 protected:
 	virtual void BeginPlay() override;
+
+	virtual void OnWeaponStateSet();
+	virtual void HandleOnEquipped();
+	virtual void HandleOnDropped();
+	virtual void HandleOnEquippedSecondary();
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,	UPrimitiveComponent* OtherComp,	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
