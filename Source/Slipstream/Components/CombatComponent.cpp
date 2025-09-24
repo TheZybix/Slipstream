@@ -186,7 +186,7 @@ void UCombatComponent::Reload()
 void UCombatComponent::SetCombatState(ECombatState NewCombatState)
 {
 	if (Character == nullptr) return;
-	if (Character->HasAuthority())
+	if (CombatState == ECombatState::ECS_Reloading && Character->HasAuthority())
 	{
 		UpdateAmmoValues();
 	}

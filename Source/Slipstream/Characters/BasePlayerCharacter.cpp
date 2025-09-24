@@ -292,8 +292,7 @@ void ABasePlayerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, con
 	}
 	
 	Health = FMath::Clamp(Health - DamageToHealth, 0.0f, MaxHealth);
-
-
+	
 	UpdateHUDHealth();
 	UpdateHUDShield();
 	PlayHitReactMontage();

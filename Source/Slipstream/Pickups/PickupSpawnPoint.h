@@ -25,17 +25,19 @@ protected:
 	UPROPERTY()
 	APickup* SpawnedPickup;
 
-	void SpawnPickup();
+	virtual void SpawnPickup();
 	void SpawnTimerFinished();
 
 	UFUNCTION()
-	void StartSpawnTimer(AActor* DestroyedActor);
+	virtual void StartSpawnTimer(AActor* DestroyedActor);
 
-private:
 	FTimerHandle SpawnTimer;
 
 	UPROPERTY(EditAnywhere)
 	float SpawnPickupTime;
+
+private:
+
 
 public:	
 	virtual void Tick(float DeltaTime) override;

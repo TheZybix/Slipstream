@@ -48,6 +48,5 @@ void APickupSpawnPoint::StartSpawnTimer(AActor* DestroyedActor)
 void APickupSpawnPoint::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 

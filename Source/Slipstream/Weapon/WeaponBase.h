@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponEquipped, AActor*, Actor);
+
 enum class EWeaponType : uint8;
 class ABasePlayerCharacter;
 class ABasePlayerController;
@@ -82,6 +84,9 @@ public:
 	void EnableCustomDepth(bool bEnable);
 
 	bool bDestroyWeapon = false;
+
+	UPROPERTY()
+	FOnWeaponEquipped WeaponEquipped;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -109,7 +114,8 @@ private:
 
 	UFUNCTION()
 	void OnRep_WeaponState();
-	
+	void ClearDestroyTimer();
+
 	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
 	UWidgetComponent* PickupWidget;
 
@@ -157,6 +163,15 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
+
+	/* Destroy weapon after it was dropped and not picked up again */
+	void StartDestroyTimer();
+	void DestroyTimerFinished();
+	
+	FTimerHandle DestroyTimer;
+	
+	UPROPERTY(EditAnywhere)
+	float DestroyTime;
 	
 public:
 	void SetWeaponState(EWeaponState State);

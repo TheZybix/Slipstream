@@ -142,6 +142,24 @@ void AWeaponBase::OnRep_StoredAmmo()
 	}
 }
 
+void AWeaponBase::StartDestroyTimer()
+{
+	if (HasAuthority()) GetWorldTimerManager().SetTimer(DestroyTimer, this, &AWeaponBase::DestroyTimerFinished, DestroyTime);
+}
+
+void AWeaponBase::DestroyTimerFinished()
+{
+	Destroy();
+}
+
+void AWeaponBase::ClearDestroyTimer()
+{
+	if (GetWorldTimerManager().IsTimerActive(DestroyTimer))
+	{
+		GetWorldTimerManager().ClearTimer(DestroyTimer);
+	}
+}
+
 void AWeaponBase::SetWeaponState(EWeaponState State)
 {
 	WeaponState = State;
@@ -192,6 +210,8 @@ void AWeaponBase::HandleOnEquipped()
 	WeaponMesh->SetEnableGravity(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	EnableCustomDepth(false);
+	WeaponEquipped.Broadcast(this);
+	ClearDestroyTimer();
 }
 
 void AWeaponBase::HandleOnEquippedSecondary()
@@ -205,6 +225,8 @@ void AWeaponBase::HandleOnEquippedSecondary()
 	EnableCustomDepth(true);
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_TAN);
 	WeaponMesh->MarkRenderStateDirty();
+	WeaponEquipped.Broadcast(this);
+	ClearDestroyTimer();
 }
 
 void AWeaponBase::HandleOnDropped()
@@ -217,6 +239,7 @@ void AWeaponBase::HandleOnDropped()
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_PURPLE);
 	WeaponMesh->MarkRenderStateDirty();
 	EnableCustomDepth(true);
+	StartDestroyTimer();
 }
 
 void AWeaponBase::Tick(float DeltaTime)
