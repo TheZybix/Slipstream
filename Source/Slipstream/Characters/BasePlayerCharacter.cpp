@@ -22,6 +22,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Slipstream/Components/BuffComponent.h"
+#include "Slipstream/HUD/ReturnToMainMenu.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
 #include "Slipstream/Types/WeaponTypes.h"
 
@@ -691,6 +692,26 @@ void ABasePlayerCharacter::GrenadeKeyPressed(const FInputActionValue& Value)
 	}
 }
 
+void ABasePlayerCharacter::PauseKeyPressed(const FInputActionValue& Value)
+{
+	if (ReturnToMenuWidget == nullptr) return;
+	if (ReturnToMenu == nullptr)
+	{
+		PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
+		if (PlayerController) ReturnToMenu = CreateWidget<UReturnToMainMenu>(PlayerController, ReturnToMenuWidget);
+	}
+	if (ReturnToMenu)
+	{
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+		if (bReturnToMainMenuOpen)
+		{
+			ReturnToMenu->MenuSetup();
+		}
+		else ReturnToMenu->MenuTeardown();
+	}
+	
+}
+
 
 void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -709,6 +730,7 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::TriggerKeyPressed);
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::ReloadKeyPressed);
 		EnhancedInputComponent->BindAction(GrenadeThrowAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::GrenadeKeyPressed);
+		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::PauseKeyPressed);
 	}
 }
 

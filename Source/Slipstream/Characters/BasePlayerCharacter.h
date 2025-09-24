@@ -10,6 +10,7 @@
 #include "Components/TimelineComponent.h"
 #include "BasePlayerCharacter.generated.h"
 
+class UReturnToMainMenu;
 enum class ECombatState : uint8;
 class UCombatComponent;
 class UBuffComponent;
@@ -108,6 +109,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	TObjectPtr<UInputAction> GrenadeThrowAction;
+
+	UPROPERTY(EditAnywhere, Category = Input)
+	TObjectPtr<UInputAction> PauseAction;
 	
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -125,6 +129,7 @@ private:
 	void TriggerKeyPressed(const FInputActionValue& Value);
 	void ReloadKeyPressed(const FInputActionValue& Value);
 	void GrenadeKeyPressed(const FInputActionValue& Value);
+	void PauseKeyPressed(const FInputActionValue& Value);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	UWidgetComponent* OverheadWidget;
@@ -297,6 +302,14 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* AttachedGrenade;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget> ReturnToMenuWidget;
+
+	UPROPERTY()
+	UReturnToMainMenu* ReturnToMenu;
+
+	bool bReturnToMainMenuOpen = false;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
