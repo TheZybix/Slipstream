@@ -25,9 +25,10 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* HitParticle;
-
+		
 	UPROPERTY(EditAnywhere)
 	float Damage = 15.f;
+
 
 private: 
 	UPROPERTY(EditAnywhere)

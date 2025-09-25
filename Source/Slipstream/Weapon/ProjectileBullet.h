@@ -18,6 +18,10 @@ class SLIPSTREAM_API AProjectileBullet : public AProjectile
 
 public:
 	AProjectileBullet();
+	
+	UPROPERTY()
+	float HeadshotDamage = 15.f;
+
 
 protected:
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;

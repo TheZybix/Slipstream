@@ -102,6 +102,9 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,	UPrimitiveComponent* OtherComp,	int32 OtherBodyIndex);
 
+	UPROPERTY(EditAnywhere)
+	float HeadshotDamage = 15.f;
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
 	USkeletalMeshComponent* WeaponMesh;
@@ -186,6 +189,7 @@ public:
 	FORCEINLINE int32 GetMagAmmo() const { return Ammo; }
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 	FORCEINLINE int32 GetStoredMaxAmmo() const { return StoredMaxAmmo; }
+	FORCEINLINE float GetHeadshotDamage() const { return HeadshotDamage; }
 	bool IsEmpty();
 	bool IsFull();
 };
