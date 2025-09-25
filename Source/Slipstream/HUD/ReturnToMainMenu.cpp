@@ -6,6 +6,7 @@
 #include "MultiplayerSessionsSubsystem.h"
 #include "Components/Button.h"
 #include "GameFramework/GameMode.h"
+#include "Slipstream/Characters/BasePlayerCharacter.h"
 
 void UReturnToMainMenu::MenuSetup()
 {
@@ -75,6 +76,14 @@ void UReturnToMainMenu::OnDestroySession(bool bWasSuccesful)
 	}
 }
 
+void UReturnToMainMenu::OnPlayerLeftGame()
+{
+	if (MultiplayerSessionsSubsystem)
+	{
+		MultiplayerSessionsSubsystem->DestroySession();
+	}
+}
+
 void UReturnToMainMenu::MenuTeardown()
 {
 	RemoveFromParent();
@@ -102,8 +111,23 @@ void UReturnToMainMenu::MenuTeardown()
 void UReturnToMainMenu::ReturnToMainMenuButtonClicked()
 {
 	ReturnButton->SetIsEnabled(false);
-	if (MultiplayerSessionsSubsystem)
+
+	UWorld* World = GetWorld();
+	if (World)
 	{
-		MultiplayerSessionsSubsystem->DestroySession();
+		APlayerController* FirstPlayerController = World->GetFirstPlayerController();
+		if (FirstPlayerController)
+		{
+			ABasePlayerCharacter* PlayerCharacter = Cast<ABasePlayerCharacter>(FirstPlayerController->GetPawn());
+			if (PlayerCharacter)
+			{
+				PlayerCharacter->ServerLeaveGame();
+				PlayerCharacter->OnLeftGame.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
+			}
+			else
+			{
+				ReturnButton->SetIsEnabled(true);
+			}
+		}
 	}
 }

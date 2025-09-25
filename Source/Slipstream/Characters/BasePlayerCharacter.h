@@ -10,6 +10,8 @@
 #include "Components/TimelineComponent.h"
 #include "BasePlayerCharacter.generated.h"
 
+class UNiagaraComponent;
+class UNiagaraSystem;
 class UReturnToMainMenu;
 enum class ECombatState : uint8;
 class UCombatComponent;
@@ -22,6 +24,8 @@ class UCameraComponent;
 class UWidgetComponent;
 class ABasePlayerController;
 class ABasePlayerState;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
 
 UCLASS()
 class SLIPSTREAM_API ABasePlayerCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -44,9 +48,9 @@ public:
 	void PlayReloadMontage();
 	void PlayDeathMontage();
 
-	void Elim();
+	void Elim(bool bPlayerLeftGame);
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastElim();
+	void MulticastElim(bool bPlayerLeftGame);
 
 	UPROPERTY()
 	ABasePlayerState* BasePlayerState;
@@ -62,6 +66,18 @@ public:
 	void UpdateHUDShield();
 	void UpdateHUDAmmo();
 
+	UFUNCTION(Server, Reliable)
+	void ServerLeaveGame();
+
+	FOnLeftGame OnLeftGame;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastGainTheLead();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastLostTheLead();
+
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -219,10 +235,12 @@ private:
 
 	bool bIsDead = false;
 
+	/* Leave game and die */
 	FTimerHandle ElimTimer;
 	UPROPERTY(EditDefaultsOnly)
 	float ElimDelay = 3.f;
 	void ElimTimerFinished();
+	bool bLeftGame = false;
 
 	/* DissolveEffect */
 	UPROPERTY(VisibleAnywhere)
@@ -299,6 +317,12 @@ private:
 	USoundBase* EliminationBotSound;
 
 	bool bIsMappingContextAdded = false;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* CrownSystem;
+
+	UPROPERTY()
+	UNiagaraComponent* CrownComponent;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* AttachedGrenade;

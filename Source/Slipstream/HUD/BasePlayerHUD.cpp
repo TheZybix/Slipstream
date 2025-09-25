@@ -7,6 +7,11 @@
 #include "GameFramework/PlayerController.h"
 #include "CharacterOverlay.h"
 #include "Announcement.h"
+#include "ElimAnnouncement.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/TextBlock.h"
+#include "Components/HorizontalBox.h"
+#include "Components/CanvasPanelSlot.h"
 
 void ABasePlayerHUD::BeginPlay()
 {
@@ -30,6 +35,49 @@ void ABasePlayerHUD::AddAnnouncement()
 	{
 		Announcement = CreateWidget<UAnnouncement>(PlayerContoller, AnnouncementClass);
 		Announcement->AddToViewport();
+	}
+}
+
+void ABasePlayerHUD::AddElimAnnouncement(FString EliminationText)
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Add elim announcement")));
+	OwningPlayer = OwningPlayer == nullptr ? GetOwningPlayerController() : OwningPlayer;
+	
+	if (OwningPlayer && ElimAnnouncementClass)
+	{
+		UElimAnnouncement* ElimAnnouncement = CreateWidget<UElimAnnouncement>(OwningPlayer, ElimAnnouncementClass);
+		
+		if (ElimAnnouncement)
+		{
+			ElimAnnouncement->ElimText->SetText(FText::FromString(EliminationText));
+			ElimAnnouncement->AddToViewport();
+			for (UElimAnnouncement* Msg : ElimMessages)
+			{
+				if (Msg && Msg->AnnouncementBox)
+				{
+					UCanvasPanelSlot* CanvasSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(Msg->AnnouncementBox);
+					if (CanvasSlot)
+					{
+						FVector2D Position = CanvasSlot->GetPosition();
+						FVector2D NewPosition(CanvasSlot->GetPosition().X, Position.Y + CanvasSlot->GetSize().Y * 1.25);
+						CanvasSlot->SetPosition(NewPosition);
+					}
+				}
+			}
+			ElimMessages.Add(ElimAnnouncement);
+			FTimerHandle ElimMsgTimer;
+			FTimerDelegate ElimMsgDelegate;
+			ElimMsgDelegate.BindUFunction(this, FName("ElimAnnouncementTimerFinished"),ElimAnnouncement);
+			GetWorldTimerManager().SetTimer( ElimMsgTimer, ElimMsgDelegate,ElimAnnouncementTime,false	);
+		}
+	}
+}
+
+void ABasePlayerHUD::ElimAnnouncementTimerFinished(UElimAnnouncement* MsgToRemove)
+{
+	if (MsgToRemove)
+	{
+		MsgToRemove->RemoveFromParent();
 	}
 }
 

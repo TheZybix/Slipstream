@@ -70,27 +70,48 @@ void ASlipstreamGameMode::PlayerEliminated(ABasePlayerCharacter* EliminatedPlaye
 
 	if (AttackerPlayerState && AttackerPlayerState != EliminatedPlayerState && SlipstreamGameState)
 	{
+		TArray<ABasePlayerState*> PlayersCurrentlyInLead;
+		for (auto LeadPlayer: SlipstreamGameState->TopScoringPlayers)
+		{
+			PlayersCurrentlyInLead.Add(LeadPlayer);
+		}
+
+		if (AttackerPlayerState->GetPawn()->IsLocallyControlled()) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Add to score local")));
+		else if (AttackerPlayerState->GetPawn()->HasAuthority()) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Add to score server")));
+		
 		AttackerPlayerState->AddToScore(1.f);
 		SlipstreamGameState->UpdateTopScore(AttackerPlayerState);
+		
+		if (SlipstreamGameState->TopScoringPlayers.Contains(AttackerPlayerState))
+		{
+			ABasePlayerCharacter* Leader = Cast<ABasePlayerCharacter>(AttackerPlayerState->GetPawn());
+			if (Leader)
+			{
+				Leader->MulticastGainTheLead();
+			}
+		}
+
+		for (int32 i = 0; i < PlayersCurrentlyInLead.Num(); i++)
+		{
+			if (!SlipstreamGameState->TopScoringPlayers.Contains(PlayersCurrentlyInLead[i]))
+			{
+				ABasePlayerCharacter* Loser = Cast<ABasePlayerCharacter>(PlayersCurrentlyInLead[i]->GetPawn());
+				if (Loser)
+				{
+					Loser->MulticastLostTheLead();
+				}
+			}
+		}
 	}
 	
 	if (EliminatedPlayer && EliminatedPlayerState)
 	{
-		EliminatedPlayer->Elim();
+		EliminatedPlayer->Elim(false);
 		EliminatedPlayerState->AddToDefeat(1);
 	}
 	if (EliminatedPlayerState && AttackerPlayerState)
 	{
-		FString AttackerName = AttackerPlayerState->GetPlayerName();
-		FString EliminatedPlayerName = EliminatedPlayerState->GetPlayerName();
-		if (!AttackerName.IsEmpty() && !EliminatedPlayerName.IsEmpty())
-		{
-			FString EliminationMsg = FString::Printf(TEXT("%s eliminated %s"), *AttackerName, *EliminatedPlayerName);
-			ShowEliminationText(EliminationMsg);
-			
-			GetWorldTimerManager().ClearTimer(EliminationTextTimer);
-			GetWorldTimerManager().SetTimer(EliminationTextTimer, this, &ASlipstreamGameMode::EliminationTimerFinished, EliminationTextTimerDelay, false);
-		}
+		CreateElimMessage(AttackerPlayerState, EliminatedPlayerState);
 	}
 }
 
@@ -111,19 +132,43 @@ void ASlipstreamGameMode::RequestRespawn(ACharacter* EliminatedPlayer, AControll
 	}
 }
 
-
-void ASlipstreamGameMode::EliminationTimerFinished()
+void ASlipstreamGameMode::PlayerLeftGame(ABasePlayerState* PlayerState)
 {
-	ShowEliminationText(FString(""));
+	if (PlayerState == nullptr) return;
+	ASlipstreamGameState* SlipstreamGameState = GetGameState<ASlipstreamGameState>();
+	if (SlipstreamGameState && SlipstreamGameState->TopScoringPlayers.Contains(PlayerState))
+	{
+		SlipstreamGameState->TopScoringPlayers.Remove(PlayerState);
+	}
+	ABasePlayerCharacter* LeavingPlayer = Cast<ABasePlayerCharacter>(PlayerState->GetPawn());
+	if (LeavingPlayer)
+	{
+		LeavingPlayer->Elim(true);
+	}
 }
 
-void ASlipstreamGameMode::ShowEliminationText(FString EliminationMsg)
+void ASlipstreamGameMode::CreateElimMessage(ABasePlayerState* AttackerState, ABasePlayerState* EliminatedState)
 {
+	FString AttackerName = AttackerState->GetPlayerName();
+	FString EliminatedPlayerName = EliminatedState->GetPlayerName();
+	APlayerController* AttackerController = AttackerState->GetPlayerController();
+	APlayerController* EliminatedController = EliminatedState->GetPlayerController();
+	KillMessage = KillMessages[FMath::RandRange(0, KillMessages.Num() - 1)];
+	FString EliminationMsg;
+		
+	if (AttackerName.IsEmpty() || EliminatedPlayerName.IsEmpty()) return;
+	
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABasePlayerController* PC = Cast<ABasePlayerController>(It->Get()))
 		{
-			PC->ClientSetHUDElimination(EliminationMsg);
+			if (PC == AttackerController && PC != EliminatedController) EliminationMsg = FString::Printf(TEXT("You %s %s!"), *KillMessage, *EliminatedPlayerName);
+			else if (PC != AttackerController && PC == EliminatedController) EliminationMsg = FString::Printf(TEXT("%s %s you!"), *AttackerName, *KillMessage);
+			else if (PC != AttackerController && PC != EliminatedController) EliminationMsg = FString::Printf(TEXT("%s %s %s!"), *AttackerName, *KillMessage, *EliminatedPlayerName);
+			else if (PC == AttackerController && PC == EliminatedController) EliminationMsg = FString::Printf(TEXT("You %s yourself!"), *KillMessage);
+			else EliminationMsg = FString::Printf(TEXT("ERROR MESSAGE: No Players found"));
+			
+			if (!EliminationMsg.IsEmpty()) PC->ClientSetHUDElimination(EliminationMsg);
 		}
 	}
 }

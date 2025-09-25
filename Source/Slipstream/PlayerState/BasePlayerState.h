@@ -18,6 +18,7 @@ class SLIPSTREAM_API ABasePlayerState : public APlayerState
 	
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
+
 	virtual void OnRep_Score() override;
 
 	UFUNCTION()

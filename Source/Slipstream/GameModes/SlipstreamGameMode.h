@@ -14,6 +14,7 @@ namespace MatchState
 
 class ABasePlayerController;
 class ABasePlayerCharacter;
+class ABasePlayerState;
 
 /**
  * 
@@ -26,9 +27,9 @@ class SLIPSTREAM_API ASlipstreamGameMode : public AGameMode
 public:
 	ASlipstreamGameMode();
 	virtual void Tick(float DeltaTime) override;
-	void ShowEliminationText(FString EliminationMsg);
 	virtual void PlayerEliminated(ABasePlayerCharacter* EliminatedPlayer, ABasePlayerController* EliminatedPlayerController, ABasePlayerController* AttackerPlayerController);
 	virtual void RequestRespawn(ACharacter* EliminatedPlayer, AController* EliminatedPlayerController);
+	void PlayerLeftGame(ABasePlayerState* PlayerState);
 
 	UPROPERTY(EditDefaultsOnly)
 	float WarmupTime = 10.f;
@@ -46,10 +47,14 @@ protected:
 	virtual void OnMatchStateSet() override;
 
 private:
-	FTimerHandle EliminationTextTimer;
-	float EliminationTextTimerDelay = 5.f;
-	void EliminationTimerFinished();
 	float CountdownTime = 0.f;
+
+	void CreateElimMessage(ABasePlayerState* AttackerState, ABasePlayerState* EliminatedState);
+
+	UPROPERTY(EditDefaultsOnly)
+	TArray<FString> KillMessages;
+
+	FString KillMessage;
 
 public:
 	FORCEINLINE float GetCountdownTime() { return CountdownTime; }

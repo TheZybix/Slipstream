@@ -16,7 +16,8 @@ void ABasePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void ABasePlayerState::OnRep_Score()
 {
 	Super::OnRep_Score();
-
+	
+	NewScore = GetScore();
 	PlayerCharacter = PlayerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetPawn()) : PlayerCharacter;
 	if (PlayerCharacter)
 	{

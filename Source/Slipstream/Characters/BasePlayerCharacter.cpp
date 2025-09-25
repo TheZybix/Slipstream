@@ -15,6 +15,9 @@
 #include "Slipstream/Components/CombatComponent.h"
 #include "Slipstream/Weapon/WeaponBase.h"
 #include "BaseCharacterAnimInstance.h"
+#include "NiagaraComponent.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Slipstream/Slipstream.h"
 #include "Slipstream/GameModes/SlipstreamGameMode.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
@@ -22,6 +25,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Slipstream/Components/BuffComponent.h"
+#include "Slipstream/GameState/SlipstreamGameState.h"
 #include "Slipstream/HUD/ReturnToMainMenu.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
 #include "Slipstream/Types/WeaponTypes.h"
@@ -171,10 +175,9 @@ void ABasePlayerCharacter::PlayDeathMontage()
 	}
 }
 
-void ABasePlayerCharacter::Elim()
+void ABasePlayerCharacter::Elim(bool bPlayerLeftGame)
 {
-	MulticastElim();
-	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABasePlayerCharacter::ElimTimerFinished, ElimDelay);
+	MulticastElim(bPlayerLeftGame);
 	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
 		if (CombatComponent->EquippedWeapon->bDestroyWeapon) CombatComponent->EquippedWeapon->Destroy();
@@ -185,8 +188,9 @@ void ABasePlayerCharacter::Elim()
 	}
 }
 
-void ABasePlayerCharacter::MulticastElim_Implementation()
+void ABasePlayerCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 {
+	bLeftGame = bPlayerLeftGame;
 	if (PlayerController)
 	{
 		PlayerController->SetHUDWeaponAmmo(0);
@@ -236,14 +240,32 @@ void ABasePlayerCharacter::MulticastElim_Implementation()
 		UGameplayStatics::SpawnSoundAtLocation(this, EliminationBotSound, GetActorLocation());
 	}
 	if (IsLocallyControlled() && CombatComponent && CombatComponent->bAiming && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle) ShowSniperScopeWidget(false);
+
+	if (CrownComponent) CrownComponent->DestroyComponent();
+	
+	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABasePlayerCharacter::ElimTimerFinished, ElimDelay);
 }
 
 void ABasePlayerCharacter::ElimTimerFinished()
 {
 	ASlipstreamGameMode* GameMode = GetWorld()->GetAuthGameMode<ASlipstreamGameMode>();
-	if (GameMode)
+	if (GameMode && !bLeftGame)
 	{
 		GameMode->RequestRespawn(this, Controller);
+	}
+	if (bLeftGame && IsLocallyControlled())
+	{
+		OnLeftGame.Broadcast();
+	}
+}
+
+void ABasePlayerCharacter::ServerLeaveGame_Implementation()
+{
+	ASlipstreamGameMode* GameMode = GetWorld()->GetAuthGameMode<ASlipstreamGameMode>();
+	BasePlayerState = BasePlayerState == nullptr ? GetPlayerState<ABasePlayerState>() : BasePlayerState;
+	if (GameMode && BasePlayerState)
+	{
+		GameMode->PlayerLeftGame(BasePlayerState);
 	}
 }
 
@@ -349,6 +371,12 @@ void ABasePlayerCharacter::PollInit()
 			BasePlayerState->AddToScore(0.f);
 			BasePlayerState->AddToDefeat(0);
 		}
+		
+		ASlipstreamGameState* GameState = Cast<ASlipstreamGameState>(UGameplayStatics::GetGameState(this));
+		if (GameState && GameState->TopScoringPlayers.Contains(BasePlayerState))
+		{
+			MulticastGainTheLead();
+		}
 	}
 }
 
@@ -398,6 +426,25 @@ void ABasePlayerCharacter::InitializeMaterials()
 	}
 }
 
+
+void ABasePlayerCharacter::MulticastGainTheLead_Implementation()
+{
+	
+	if (CrownSystem == nullptr) return;
+	if (CrownComponent == nullptr)
+	{
+		CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(CrownSystem, GetMesh(), FName("CrownSocket"),  FVector::ZeroVector,FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+	}
+	if (CrownComponent)
+	{
+		CrownComponent->Activate();
+	}
+}
+
+void ABasePlayerCharacter::MulticastLostTheLead_Implementation()
+{
+	if (CrownComponent) CrownComponent->DestroyComponent();
+}
 
 void ABasePlayerCharacter::BeginPlay()
 {
@@ -730,7 +777,7 @@ void ABasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(TriggerAction, ETriggerEvent::Completed, this, &ABasePlayerCharacter::TriggerKeyPressed);
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::ReloadKeyPressed);
 		EnhancedInputComponent->BindAction(GrenadeThrowAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::GrenadeKeyPressed);
-		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Triggered, this, &ABasePlayerCharacter::PauseKeyPressed);
+		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ABasePlayerCharacter::PauseKeyPressed);
 	}
 }
 

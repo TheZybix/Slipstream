@@ -253,9 +253,9 @@ void ABasePlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 void ABasePlayerController::ClientSetHUDElimination_Implementation(const FString& EliminationText)
 {
 	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
-	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->EliminationText)
+	if (PlayerHUD)
 	{
-		PlayerHUD->CharacterOverlay->EliminationText->SetText(FText::FromString(EliminationText));
+		PlayerHUD->AddElimAnnouncement(EliminationText);
 	}
 }
 

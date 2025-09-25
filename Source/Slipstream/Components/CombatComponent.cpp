@@ -156,6 +156,8 @@ void UCombatComponent::EquipSecondaryWeapon(AWeaponBase* WeaponToEquip)
 
 void UCombatComponent::SwapWeapon()
 {
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+	
 	AWeaponBase* TempWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = TempWeapon;
