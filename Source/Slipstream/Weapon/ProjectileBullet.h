@@ -19,8 +19,8 @@ class SLIPSTREAM_API AProjectileBullet : public AProjectile
 public:
 	AProjectileBullet();
 	
-	UPROPERTY()
-	float HeadshotDamage = 15.f;
+	UPROPERTY(EditDefaultsOnly)
+	float HeadshotDamage = 80.f;
 
 
 protected:
