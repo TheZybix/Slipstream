@@ -46,4 +46,16 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* GrenadeText;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* BlueTeamText;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* RedTeamText;
+
+	UPROPERTY(meta = (BindWidget))
+	UProgressBar* BlueTeamBar;
+
+	UPROPERTY(meta = (BindWidget))
+	UProgressBar* RedTeamBar;
 };

@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "Slipstream/Types/Team.h"
 #include "BasePlayerState.generated.h"
 
 class ABasePlayerController;
 class ABasePlayerCharacter;
+
 /**
  * 
  */
@@ -27,7 +29,8 @@ public:
 	void AddToScore(float ScoreAmount);
 	void AddToDefeat(int32 DefeatAmount);
 
-
+	void SetTeam(ETeam NewTeam);
+	
 private:
 	UPROPERTY()
 	ABasePlayerCharacter* PlayerCharacter;
@@ -38,4 +41,14 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Defeat)
 	int32 Defeat;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Team)
+	ETeam Team = ETeam::ET_NoTeam;
+
+	UFUNCTION()
+	void OnRep_Team();
+
+public:
+	FORCEINLINE ETeam GetTeam() const { return Team; }
+	
 };

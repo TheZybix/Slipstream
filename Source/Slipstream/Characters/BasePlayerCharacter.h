@@ -24,6 +24,7 @@ class UCameraComponent;
 class UWidgetComponent;
 class ABasePlayerController;
 class ABasePlayerState;
+class ASlipstreamGameMode;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
 
@@ -334,6 +335,8 @@ private:
 	UReturnToMainMenu* ReturnToMenu;
 
 	bool bReturnToMainMenuOpen = false;
+	
+	ASlipstreamGameMode* SlipstreamGameMode;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);

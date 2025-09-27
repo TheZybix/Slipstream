@@ -17,6 +17,7 @@
 #include "Slipstream/GameState/SlipstreamGameState.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
 #include "Slipstream/HUD/Announcement.h"
+#include "Slipstream/Types/Announcement.h"
 
 
 void ABasePlayerController::BeginPlay()
@@ -82,6 +83,55 @@ void ABasePlayerController::PollInit()
 			}
 		}
 	}
+}
+
+void ABasePlayerController::OnRep_ShowTeamScores()
+{
+	if (bShowTeamScores) InitTeamScores();
+	else HideTeamScores();
+}
+
+FString ABasePlayerController::GetInfoText(const TArray<ABasePlayerState*>& Players)
+{
+	FString InfoTextString;
+	ABasePlayerState* SlipstreamPlayerState = GetPlayerState<ABasePlayerState>();
+	if (SlipstreamPlayerState == nullptr) return FString();
+	if (Players.Num() == 0)
+	{
+		InfoTextString = FString("There is no winner.");
+	}
+	else if (Players.Num() == 1 && Players[0] == SlipstreamPlayerState)
+	{
+		InfoTextString = FString("You are the winner!");
+	}
+	else if (Players.Num() == 1)
+	{
+		InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *Players[0]->GetPlayerName());
+	}
+	else if (Players.Num() > 1)
+	{
+		InfoTextString = FString("Players tied for the win: \n");
+		for (auto TiedPlayer : Players)
+		{
+			InfoTextString.Append(FString::Printf(TEXT("%s"), *TiedPlayer->GetPlayerName()));
+		}
+	}
+	return InfoTextString;
+}
+
+FString ABasePlayerController::GetTeamsInfoText(ASlipstreamGameState* SlipstreamGameState)
+{
+	if (SlipstreamGameState == nullptr) return FString();
+	FString InfoTextString;
+
+	int32 RedTeamScore = SlipstreamGameState->RedTeamScore;
+	int32 BlueTeamScore = SlipstreamGameState->BlueTeamScore;
+	if (RedTeamScore > BlueTeamScore) InfoTextString = FString::Printf(TEXT("RED TEAM WON!"));
+	if (RedTeamScore == BlueTeamScore) InfoTextString = FString::Printf(TEXT("DRAW!"));
+	if (RedTeamScore < BlueTeamScore) InfoTextString = FString::Printf(TEXT("BLUE TEAM WON!"));
+	if (RedTeamScore == 0 && BlueTeamScore == 0) InfoTextString = FString::Printf(TEXT("LEARN TO AIM"));
+	
+	return InfoTextString;
 }
 
 void ABasePlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest,
@@ -248,6 +298,64 @@ void ABasePlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ABasePlayerController, MatchState);
+	DOREPLIFETIME(ABasePlayerController, bShowTeamScores);
+}
+
+void ABasePlayerController::HideTeamScores()
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->RedTeamBar && PlayerHUD->CharacterOverlay->RedTeamText)
+	{
+		PlayerHUD->CharacterOverlay->RedTeamBar->SetVisibility(ESlateVisibility::Hidden);
+		PlayerHUD->CharacterOverlay->RedTeamText->SetText(FText());
+	}
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->BlueTeamBar && PlayerHUD->CharacterOverlay->BlueTeamText)
+	{
+		PlayerHUD->CharacterOverlay->BlueTeamBar->SetVisibility(ESlateVisibility::Hidden);
+		PlayerHUD->CharacterOverlay->BlueTeamText->SetText(FText());
+	}
+}
+
+void ABasePlayerController::InitTeamScores()
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	FString Zero ("0");
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->RedTeamBar && PlayerHUD->CharacterOverlay->RedTeamText)
+	{
+		PlayerHUD->CharacterOverlay->RedTeamBar->SetVisibility(ESlateVisibility::Visible);
+		PlayerHUD->CharacterOverlay->RedTeamBar->SetPercent(0.f);
+		PlayerHUD->CharacterOverlay->RedTeamText->SetText(FText::FromString(Zero));
+	}
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->BlueTeamBar && PlayerHUD->CharacterOverlay->BlueTeamText)
+	{
+		PlayerHUD->CharacterOverlay->BlueTeamBar->SetVisibility(ESlateVisibility::Visible);
+		PlayerHUD->CharacterOverlay->BlueTeamBar->SetPercent(0.f);
+		PlayerHUD->CharacterOverlay->BlueTeamText->SetText(FText::FromString(Zero));
+	}
+}
+
+void ABasePlayerController::SetHUDRedTeamScore(int32 RedScore, int32 MaxScore)
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	FString ScoreText = FString::Printf(TEXT("%d"), RedScore);
+	float Percent = (float)RedScore / MaxScore;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->RedTeamBar && PlayerHUD->CharacterOverlay->RedTeamText)
+	{
+		PlayerHUD->CharacterOverlay->RedTeamBar->SetPercent(Percent);
+		PlayerHUD->CharacterOverlay->RedTeamText->SetText(FText::FromString(ScoreText));
+	}
+}
+
+void ABasePlayerController::SetHUDBlueTeamScore(int32 BlueScore, int32 MaxScore)
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	FString ScoreText = FString::Printf(TEXT("%d"), BlueScore);
+	float Percent = (float)BlueScore / MaxScore;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->BlueTeamBar && PlayerHUD->CharacterOverlay->BlueTeamText)
+	{
+		PlayerHUD->CharacterOverlay->BlueTeamBar->SetPercent(Percent);
+		PlayerHUD->CharacterOverlay->BlueTeamText->SetText(FText::FromString(ScoreText));
+	}
 }
 
 void ABasePlayerController::ClientSetHUDElimination_Implementation(const FString& EliminationText)
@@ -304,12 +412,12 @@ void ABasePlayerController::ReceivedPlayer()
 	}
 }
 
-void ABasePlayerController::OnMatchStateSet(FName State)
+void ABasePlayerController::OnMatchStateSet(FName State, bool bTeamsMatch)
 {
 	MatchState = State;
 	if (MatchState == MatchState::InProgress)
 	{
-		HandleMatchHasStarted();	
+		HandleMatchHasStarted(bTeamsMatch);	
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
@@ -329,8 +437,9 @@ void ABasePlayerController::OnRep_MatchState()
 	}
 }
 
-void ABasePlayerController::HandleMatchHasStarted()
+void ABasePlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 {
+	if (HasAuthority()) bShowTeamScores = bTeamsMatch;
 	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
 	if (PlayerHUD)
 	{
@@ -339,6 +448,9 @@ void ABasePlayerController::HandleMatchHasStarted()
 		{
 			PlayerHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
+		if (!HasAuthority()) return;
+		if (bTeamsMatch) InitTeamScores();
+		else HideTeamScores();
 	}
 }
 
@@ -351,34 +463,16 @@ void ABasePlayerController::HandleCooldown()
 		if (PlayerHUD->Announcement && PlayerHUD->Announcement->AnnouncementText && PlayerHUD->Announcement->InfoText)
 		{
 			PlayerHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
-			PlayerHUD->Announcement->AnnouncementText->SetText(FText::FromString("New match starts in:"));
+			FString AnnouncementText = Announcement::NewMatchStartsIn;
+			PlayerHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
 
 			ASlipstreamGameState* SlipstreamGameState = Cast<ASlipstreamGameState>(UGameplayStatics::GetGameState(this));
 			ABasePlayerState* SlipstreamPlayerState = GetPlayerState<ABasePlayerState>();
 			if (SlipstreamGameState)
 			{
 				TArray<ABasePlayerState*> TopScoringPlayers = SlipstreamGameState->TopScoringPlayers;
-				FString InfoTextString;
-				if (TopScoringPlayers.Num() == 0)
-				{
-					InfoTextString = FString("There is no winner.");
-				}
-				else if (TopScoringPlayers.Num() == 1 && TopScoringPlayers[0] == SlipstreamPlayerState)
-				{
-					InfoTextString = FString("You are the winner!");
-				}
-				else if (TopScoringPlayers.Num() == 1)
-				{
-					InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopScoringPlayers[0]->GetPlayerName());
-				}
-				else if (TopScoringPlayers.Num() > 1)
-				{
-					InfoTextString = FString("Players tied for the win: \n");
-					for (auto TiedPlayer : TopScoringPlayers)
-					{
-						InfoTextString.Append(FString::Printf(TEXT("%s"), *TiedPlayer->GetPlayerName()));
-					}
-				}
+				FString InfoTextString = bShowTeamScores ? GetTeamsInfoText(SlipstreamGameState) : GetInfoText(TopScoringPlayers);
+				
 				PlayerHUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
 			}
 		}

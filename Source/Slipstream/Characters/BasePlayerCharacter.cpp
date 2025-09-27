@@ -228,6 +228,7 @@ void ABasePlayerCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	/* Disable collision */
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	/* Spawn elimination bot */
 	if (EliminationBotParticles)
@@ -248,10 +249,10 @@ void ABasePlayerCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 
 void ABasePlayerCharacter::ElimTimerFinished()
 {
-	ASlipstreamGameMode* GameMode = GetWorld()->GetAuthGameMode<ASlipstreamGameMode>();
-	if (GameMode && !bLeftGame)
+	SlipstreamGameMode = SlipstreamGameMode == nullptr ? GetWorld()->GetAuthGameMode<ASlipstreamGameMode>() : SlipstreamGameMode;
+	if (SlipstreamGameMode && !bLeftGame)
 	{
-		GameMode->RequestRespawn(this, Controller);
+		SlipstreamGameMode->RequestRespawn(this, Controller);
 	}
 	if (bLeftGame && IsLocallyControlled())
 	{
@@ -261,11 +262,11 @@ void ABasePlayerCharacter::ElimTimerFinished()
 
 void ABasePlayerCharacter::ServerLeaveGame_Implementation()
 {
-	ASlipstreamGameMode* GameMode = GetWorld()->GetAuthGameMode<ASlipstreamGameMode>();
+	SlipstreamGameMode = SlipstreamGameMode == nullptr ? GetWorld()->GetAuthGameMode<ASlipstreamGameMode>() : SlipstreamGameMode;
 	BasePlayerState = BasePlayerState == nullptr ? GetPlayerState<ABasePlayerState>() : BasePlayerState;
-	if (GameMode && BasePlayerState)
+	if (SlipstreamGameMode && BasePlayerState)
 	{
-		GameMode->PlayerLeftGame(BasePlayerState);
+		SlipstreamGameMode->PlayerLeftGame(BasePlayerState);
 	}
 }
 
@@ -296,8 +297,11 @@ void ABasePlayerCharacter::PlayThrowGrenadeMontage()
 void ABasePlayerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
                                          AController* InstigatorController, AActor* DamageCauser)
 {
-	if (bIsDead) return;
-
+	SlipstreamGameMode = SlipstreamGameMode == nullptr ? GetWorld()->GetAuthGameMode<ASlipstreamGameMode>() : SlipstreamGameMode;
+	
+	if (bIsDead || SlipstreamGameMode == nullptr) return;
+	Damage = SlipstreamGameMode->CalculateDamage(InstigatorController, Controller, Damage);
+	
 	// Subtract damage from shield first
 	float DamageToHealth = Damage;
 	if (Shield > 0.f)
@@ -322,7 +326,6 @@ void ABasePlayerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, con
 
 	if (Health == 0.f)
 	{
-		ASlipstreamGameMode* SlipstreamGameMode = GetWorld()->GetAuthGameMode<ASlipstreamGameMode>();
 		if (SlipstreamGameMode)
 		{
 			PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
@@ -635,9 +638,9 @@ void ABasePlayerCharacter::Destroyed()
 	{
 		EliminationBotParticlesComponent->DestroyComponent();
 	}
-
-	ASlipstreamGameMode* SlipstreamGame = Cast<ASlipstreamGameMode>(UGameplayStatics::GetGameMode(this));
-	bool bMatchNotInProgress = SlipstreamGame && SlipstreamGame->GetMatchState() != MatchState::InProgress;
+	
+	SlipstreamGameMode = SlipstreamGameMode == nullptr ? GetWorld()->GetAuthGameMode<ASlipstreamGameMode>() : SlipstreamGameMode;
+	bool bMatchNotInProgress = SlipstreamGameMode && SlipstreamGameMode->GetMatchState() != MatchState::InProgress;
 	if (CombatComponent && CombatComponent->EquippedWeapon && bMatchNotInProgress)
 	{
 		CombatComponent->EquippedWeapon->Destroy();

@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "BasePlayerController.generated.h"
 
+class ASlipstreamGameState;
+class ABasePlayerState;
 class ABasePlayerHUD;
 class UCharacterOverlay;
 class ASlipstreamGameMode;
@@ -27,6 +29,10 @@ public:
 	void SetHUDAnnouncementCountdown(float CountdownTime);
 	void SetHUDGrenades(int32 Grenades);
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	void HideTeamScores();
+	void InitTeamScores();
+	void SetHUDRedTeamScore(int32 RedScore, int32 MaxScore);
+	void SetHUDBlueTeamScore(int32 BlueScore, int32 MaxScore);
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetHUDElimination(const FString& EliminationText);
@@ -38,8 +44,8 @@ public:
 
 	virtual void ReceivedPlayer() override;
 
-	void OnMatchStateSet(FName State);
-	void HandleMatchHasStarted();
+	void OnMatchStateSet(FName Statebool, bool bTeamsMatch = false);
+	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void HandleCooldown();
 	
 protected:
@@ -69,6 +75,15 @@ protected:
 
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float StartingTime, float Cooldown);
+
+	UPROPERTY(ReplicatedUsing = OnRep_ShowTeamScores)
+	bool bShowTeamScores = false;
+
+	UFUNCTION()
+	void OnRep_ShowTeamScores();
+
+	FString GetInfoText(const TArray<ABasePlayerState*>& Players);
+	FString GetTeamsInfoText(ASlipstreamGameState* SlipstreamGameState);
 	
 private:
 	UPROPERTY()

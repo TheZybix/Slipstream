@@ -30,6 +30,7 @@ public:
 	virtual void PlayerEliminated(ABasePlayerCharacter* EliminatedPlayer, ABasePlayerController* EliminatedPlayerController, ABasePlayerController* AttackerPlayerController);
 	virtual void RequestRespawn(ACharacter* EliminatedPlayer, AController* EliminatedPlayerController);
 	void PlayerLeftGame(ABasePlayerState* PlayerState);
+	virtual float CalculateDamage(AController* Attacker, AController* Victim, float Damage);
 
 	UPROPERTY(EditDefaultsOnly)
 	float WarmupTime = 10.f;
@@ -41,6 +42,8 @@ public:
 	float CooldownTime = 10.f;
 
 	float LevelStartingTime = 0.f;
+
+	bool bTeamsMatch = false;
 
 protected:
 	virtual void BeginPlay() override;

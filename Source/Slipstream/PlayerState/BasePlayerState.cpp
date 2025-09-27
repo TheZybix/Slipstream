@@ -11,6 +11,7 @@ void ABasePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ABasePlayerState, Defeat);
+	DOREPLIFETIME(ABasePlayerState, Team)
 }
 
 void ABasePlayerState::OnRep_Score()
@@ -59,6 +60,21 @@ void ABasePlayerState::AddToDefeat(int32 DefeatAmount)
 	}
 }
 
+void ABasePlayerState::SetTeam(ETeam NewTeam)
+{
+	Team = NewTeam;
+	PlayerCharacter = PlayerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetPawn()) : PlayerCharacter;
+	if (PlayerCharacter)
+	{
+		
+	}
+}
+
+void ABasePlayerState::OnRep_Team()
+{
+
+}
+
 void ABasePlayerState::OnRep_Defeat()
 {
 	PlayerCharacter = PlayerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetPawn()) : PlayerCharacter;
@@ -71,4 +87,5 @@ void ABasePlayerState::OnRep_Defeat()
 		}
 	}
 }
+
 

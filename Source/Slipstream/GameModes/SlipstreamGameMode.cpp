@@ -35,7 +35,7 @@ void ASlipstreamGameMode::OnMatchStateSet()
 		ABasePlayerController* PlayerController = Cast<ABasePlayerController>(*It);
 		if (PlayerController)
 		{
-			PlayerController->OnMatchStateSet(MatchState);
+			PlayerController->OnMatchStateSet(MatchState, bTeamsMatch);
 		}
 	}
 }
@@ -147,12 +147,28 @@ void ASlipstreamGameMode::PlayerLeftGame(ABasePlayerState* PlayerState)
 	}
 }
 
+float ASlipstreamGameMode::CalculateDamage(AController* Attacker, AController* Victim, float Damage)
+{
+	ABasePlayerState* AttackerState = Attacker->GetPlayerState<ABasePlayerState>();
+	ABasePlayerState* VictimState = Victim->GetPlayerState<ABasePlayerState>();
+	if (AttackerState == nullptr || VictimState == nullptr)
+	{
+		return Damage;
+	}
+	if (AttackerState == VictimState)
+	{
+		return 0.f;
+	}
+	return Damage;
+}
+
 void ASlipstreamGameMode::CreateElimMessage(ABasePlayerState* AttackerState, ABasePlayerState* EliminatedState)
 {
 	FString AttackerName = AttackerState->GetPlayerName();
 	FString EliminatedPlayerName = EliminatedState->GetPlayerName();
 	APlayerController* AttackerController = AttackerState->GetPlayerController();
 	APlayerController* EliminatedController = EliminatedState->GetPlayerController();
+	if (KillMessages.IsEmpty()) KillMessages.Add("eliminated");
 	KillMessage = KillMessages[FMath::RandRange(0, KillMessages.Num() - 1)];
 	FString EliminationMsg;
 		
