@@ -35,6 +35,9 @@ public:
 	FMultiplayerOnJoinSessionComplete MultiplayerOnJoinSessionCompleteDelegate;
 	FMultiplayerOnDestroySessionComplete MultiplayerOnDestroySessionCompleteDelegate;
 	FMultiplayerOnStartSessionComplete MultiplayerOnStartSessionCompleteDelegate;
+
+	int32 DesiredNumPublicConnections{};
+	FString DesiredMatchType{};
 	
 protected:
 	/* Internal callbacks for the delegates in the OnlineSessionInterface Delegate List */
