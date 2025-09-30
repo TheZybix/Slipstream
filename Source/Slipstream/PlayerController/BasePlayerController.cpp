@@ -3,6 +3,7 @@
 
 #include "BasePlayerController.h"
 
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Slipstream/HUD/BasePlayerHUD.h"
 #include "Slipstream/HUD/CharacterOverlay.h"
@@ -132,6 +133,55 @@ FString ABasePlayerController::GetTeamsInfoText(ASlipstreamGameState* Slipstream
 	if (RedTeamScore == 0 && BlueTeamScore == 0) InfoTextString = FString::Printf(TEXT("LEARN TO AIM"));
 	
 	return InfoTextString;
+}
+
+void ABasePlayerController::HighPingWarning()
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->HighPingImage && PlayerHUD->CharacterOverlay->HighPingAnimation)
+	{
+		PlayerHUD->CharacterOverlay->HighPingImage->SetOpacity(1.f);
+		PlayerHUD->CharacterOverlay->PlayAnimation(PlayerHUD->CharacterOverlay->HighPingAnimation, 0.f, 5.f);
+	}
+}
+
+void ABasePlayerController::StopHighPingWarning()
+{
+	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->HighPingImage && PlayerHUD->CharacterOverlay->HighPingAnimation)
+	{
+		PlayerHUD->CharacterOverlay->HighPingImage->SetOpacity(0.f);
+		if (PlayerHUD->CharacterOverlay->IsAnimationPlaying(PlayerHUD->CharacterOverlay->HighPingAnimation)) PlayerHUD->CharacterOverlay->StopAnimation(PlayerHUD->CharacterOverlay->HighPingAnimation);
+	}
+}
+
+void ABasePlayerController::CheckPing(float DeltaTime)
+{
+	PlayerState = PlayerState == nullptr ? GetPlayerState<ABasePlayerState>() : PlayerState;
+	if(GEngine && PlayerState) GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Red, FString::Printf(TEXT("Player ping: %hhu"), PlayerState->GetCompressedPing() * 4));
+	
+	HighPingRunningTime += DeltaTime;
+	if (HighPingRunningTime > CheckPingFrequency)
+	{
+		//PlayerState = PlayerState == nullptr ? GetPlayerState<ABasePlayerState>() : PlayerState;
+		if (PlayerState)
+		{
+			if (PlayerState->GetCompressedPing() * 4 > HighPingThreshold)
+			{
+				HighPingWarning();
+				PingAnimationRunningTime = 0.f;
+			}
+		}
+		HighPingRunningTime = 0.f;
+	}
+	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->HighPingAnimation && PlayerHUD->CharacterOverlay->IsAnimationPlaying(PlayerHUD->CharacterOverlay->HighPingAnimation))
+	{
+		PingAnimationRunningTime += DeltaTime;
+		if (PingAnimationRunningTime > HighPingDuration)
+		{
+			StopHighPingWarning();
+		}
+	}
 }
 
 void ABasePlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest,
@@ -395,6 +445,8 @@ void ABasePlayerController::Tick(float DeltaTime)
 	SetHUDTime();
 	CheckTimeSync(DeltaTime);
 	PollInit();
+
+	CheckPing(DeltaTime);
 }
 
 float ABasePlayerController::GetServerTime()

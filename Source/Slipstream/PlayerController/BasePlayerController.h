@@ -84,6 +84,10 @@ protected:
 
 	FString GetInfoText(const TArray<ABasePlayerState*>& Players);
 	FString GetTeamsInfoText(ASlipstreamGameState* SlipstreamGameState);
+
+	void HighPingWarning();
+	void StopHighPingWarning();
+	void CheckPing(float DeltaTime);
 	
 private:
 	UPROPERTY()
@@ -124,4 +128,17 @@ private:
 	int32 HUDGrenades;
 	float HUDStoredAmmo;
 	float HUDMagAmmo;
+	
+	float PingAnimationRunningTime = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingDuration = 5.f;
+
+	UPROPERTY(EditAnywhere)
+	float CheckPingFrequency = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingThreshold = 50.f;
+
+	float HighPingRunningTime = CheckPingFrequency;
 };
