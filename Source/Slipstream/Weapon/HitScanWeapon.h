@@ -20,7 +20,6 @@ public:
 	virtual void Fire(const FVector& HitTarget) override;
 
 protected:
-	FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
 	void WeaponTraceHit(const FVector& HitTarget, const FVector& TraceStart, FHitResult& OutHit);
 	
 	UPROPERTY(EditAnywhere)
@@ -33,14 +32,4 @@ protected:
 private: 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticles;
-
-	/* Trace end with scatter */
-	UPROPERTY(EditAnywhere, Category = "Scatter")
-	float DistanceToSphere = 800.f;
-
-	UPROPERTY(EditAnywhere, Category = "Scatter")
-	float SphereRadius = 800.f;
-
-	UPROPERTY(EditAnywhere, Category = "Scatter")
-	bool bUseScatter = false;
 };

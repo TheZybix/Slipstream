@@ -9,6 +9,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Slipstream/Components/CombatComponent.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "Slipstream/Types/WeaponTypes.h"
@@ -111,6 +112,28 @@ void AWeaponBase::SetHUDStoredAmmo()
 void AWeaponBase::AddAmmo(int32 AmmoToAdd)
 {
 	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
+}
+
+FVector AWeaponBase::TraceEndWithScatter(const FVector& HitTarget)
+{
+	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("muzzle");
+	if (MuzzleFlashSocket == nullptr) return FVector();
+	
+	const FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+	const FVector TraceStart = SocketTransform.GetLocation();
+	
+	
+	const FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
+	const FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+	const FVector RandVect = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
+	const FVector EndLoc = SphereCenter + RandVect;
+	const FVector ToEndLoc = EndLoc - TraceStart;
+
+	/* DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Yellow, true);
+	DrawDebugSphere(GetWorld(), EndLoc, 15.f, 6, FColor::Green, true);
+	DrawDebugLine(GetWorld(), TraceStart, TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size(), FColor::Black, true); */
+	
+	return FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size());
 }
 
 void AWeaponBase::SpendRound()

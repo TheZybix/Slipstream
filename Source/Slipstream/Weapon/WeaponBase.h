@@ -28,6 +28,15 @@ enum class EWeaponState : uint8
 	EWS_Max UMETA(DisplayName = "DefaultMax")
 };
 
+UENUM(BlueprintType)
+enum class EFireType : uint8
+{
+	EFT_HitScan UMETA(DisplayName = "HitScan"),
+	EFT_Projectile UMETA(DisplayName = "Projectile"),
+	EFT_Shotgun UMETA(DisplayName = "Shotgun"),
+	EFT_Max UMETA(DisplayName = "DefaultMax")
+};
+
 UCLASS()
 class SLIPSTREAM_API AWeaponBase : public AActor
 {
@@ -44,6 +53,7 @@ public:
 	void SetHUDAmmo();
 	void SetHUDStoredAmmo();
 	void AddAmmo(int32 AmmoToAdd);
+	FVector TraceEndWithScatter(const FVector& HitTarget);
 
 	/* Textures for Weaponcrosshairs */
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
@@ -87,6 +97,12 @@ public:
 
 	UPROPERTY()
 	FOnWeaponEquipped WeaponEquipped;
+
+	UPROPERTY(EditAnywhere)
+	EFireType FireType;
+	
+	UPROPERTY(EditAnywhere, Category = "Scatter")
+	bool bUseScatter = false;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -104,6 +120,13 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float HeadshotDamage = 15.f;
+
+	/* Trace end with scatter */
+	UPROPERTY(EditAnywhere, Category = "Scatter")
+	float DistanceToSphere = 800.f;
+
+	UPROPERTY(EditAnywhere, Category = "Scatter")
+	float SphereRadius = 800.f;
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")

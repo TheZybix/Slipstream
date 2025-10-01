@@ -272,7 +272,7 @@ void ABasePlayerCharacter::ServerLeaveGame_Implementation()
 
 void ABasePlayerCharacter::PlayHitReactMontage()
 {
-	if (!CombatComponent || !CombatComponent->EquippedWeapon) return;
+	if (!CombatComponent || !CombatComponent->EquippedWeapon || CombatComponent->CombatState == ECombatState::ECS_Reloading || CombatComponent->CombatState == ECombatState::ECS_ThrowingGrenade) return;
 	
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReactMontage)
