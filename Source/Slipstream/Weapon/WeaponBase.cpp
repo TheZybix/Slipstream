@@ -109,11 +109,6 @@ void AWeaponBase::SetHUDStoredAmmo()
 	}
 }
 
-void AWeaponBase::AddAmmo(int32 AmmoToAdd)
-{
-	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
-}
-
 FVector AWeaponBase::TraceEndWithScatter(const FVector& HitTarget)
 {
 	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("muzzle");
@@ -140,10 +135,36 @@ void AWeaponBase::SpendRound()
 {
 	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
+	if (HasAuthority())
+	{
+		ClientUpdateAmmo(Ammo);
+	}
+	else ++Sequence;
 }
 
-void AWeaponBase::OnRep_Ammo()
+void AWeaponBase::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
 {
+	if (HasAuthority()) return;
+	
+	//Set ammo to the server amount, then subtract all unprocessed sequences of rpc's to adjust -> if sequence is 0, no more rpc's pending and client and server have same ammo values
+	Ammo = ServerAmmo;
+	--Sequence;
+	Ammo -= Sequence;
+	SetHUDAmmo();
+}
+
+void AWeaponBase::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
+	SetHUDAmmo();
+	ClientAddAmmo(AmmoToAdd);
+}
+
+void AWeaponBase::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+{
+	if (HasAuthority()) return;
+	
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
 	OwnerCharacter = OwnerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetOwner()) : OwnerCharacter;
 	if (OwnerCharacter && OwnerCharacter->GetCombat() && IsFull())
 	{
@@ -290,7 +311,6 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AWeaponBase, WeaponState);
-	DOREPLIFETIME(AWeaponBase, Ammo);
 	DOREPLIFETIME(AWeaponBase, StoredAmmo);
 }
 
@@ -321,7 +341,7 @@ void AWeaponBase::Fire(const FVector& HitTarget)
 			}
 		}
 	}
-	if (HasAuthority()) SpendRound();
+	SpendRound();
 }
 
 void AWeaponBase::Dropped()

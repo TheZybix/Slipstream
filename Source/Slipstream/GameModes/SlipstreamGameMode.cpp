@@ -75,9 +75,6 @@ void ASlipstreamGameMode::PlayerEliminated(ABasePlayerCharacter* EliminatedPlaye
 		{
 			PlayersCurrentlyInLead.Add(LeadPlayer);
 		}
-
-		if (AttackerPlayerState->GetPawn()->IsLocallyControlled()) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Add to score local")));
-		else if (AttackerPlayerState->GetPawn()->HasAuthority()) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Add to score server")));
 		
 		AttackerPlayerState->AddToScore(1.f);
 		SlipstreamGameState->UpdateTopScore(AttackerPlayerState);

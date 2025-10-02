@@ -161,7 +161,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	float ZoomInterpSpeed = 20.f;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	UPROPERTY(EditAnywhere)
 	int32 Ammo;
 
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_StoredAmmo)
@@ -171,12 +171,19 @@ private:
 	int32 StoredMaxAmmo;
 
 	UFUNCTION()
-	void OnRep_Ammo();
-
-	UFUNCTION()
 	void OnRep_StoredAmmo();
 
 	void SpendRound();
+
+	UFUNCTION(Reliable, Client)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+
+	//Number of unprocessed server requests for Ammo
+	//Incremented in spend round, decremented in client update ammo
+	int32 Sequence = 0;
+
+	UFUNCTION(Reliable, Client)
+	void ClientAddAmmo(int32 AmmoToAdd);
 
 	UPROPERTY(EditAnywhere)
 	int32 MagCapacity;

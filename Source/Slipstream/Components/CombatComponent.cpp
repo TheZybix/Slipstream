@@ -155,6 +155,14 @@ void UCombatComponent::EquipSecondaryWeapon(AWeaponBase* WeaponToEquip)
 	PlayEquipWeaponSound(SecondaryWeapon);
 }
 
+void UCombatComponent::OnRep_Aiming()
+{
+	if (Character && Character->IsLocallyControlled())
+	{
+		bAiming = bAimKeyPressed;
+	}
+}
+
 void UCombatComponent::SwapWeapon()
 {
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
@@ -180,14 +188,17 @@ bool UCombatComponent::ShouldSwapWeapons()
 
 void UCombatComponent::Reload()
 {
-	if (EquippedWeapon && EquippedWeapon->GetStoredAmmo() > 0 && CombatState == ECombatState::ECS_Unoccupied && !EquippedWeapon->IsFull())
+	if (EquippedWeapon && EquippedWeapon->GetStoredAmmo() > 0 && CombatState == ECombatState::ECS_Unoccupied && !EquippedWeapon->IsFull() && !bLocallyReloading)
 	{
 		ServerReload();
+		HandleReload();
+		bLocallyReloading = true;
 	}
 }
 
 void UCombatComponent::SetCombatState(ECombatState NewCombatState)
 {
+	if (NewCombatState == ECombatState::ECS_Reloading) bLocallyReloading = false;
 	if (Character == nullptr) return;
 	if (CombatState == ECombatState::ECS_Reloading && Character->HasAuthority())
 	{
@@ -199,7 +210,7 @@ void UCombatComponent::SetCombatState(ECombatState NewCombatState)
 
 void UCombatComponent::HandleReload()
 {
-	Character->PlayReloadMontage();
+	if (Character) Character->PlayReloadMontage();
 }
 
 void UCombatComponent::UpdateAmmoValues()
@@ -277,7 +288,7 @@ void UCombatComponent::ServerReload_Implementation()
 	if (Character == nullptr || EquippedWeapon == nullptr) return;
 	
 	CombatState = ECombatState::ECS_Reloading;
-	HandleReload();
+	if (!Character->IsLocallyControlled()) HandleReload();
 }
 
 void UCombatComponent::OnRep_CombatState()
@@ -285,7 +296,7 @@ void UCombatComponent::OnRep_CombatState()
 	switch (CombatState)
 	{
 		case ECombatState::ECS_Reloading:
-			HandleReload();
+			if (Character &&!Character->IsLocallyControlled()) HandleReload();
 			break;
 		case ECombatState::ECS_Unoccupied:
 			if (bTriggerKeyPressed)
@@ -340,6 +351,7 @@ void UCombatComponent::SetAiming(bool bIsAiming)
 	ServerSetAiming(bIsAiming);
 	if (Character) Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
 	if (Character->IsLocallyControlled() && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle) Character->ShowSniperScopeWidget(bAiming);
+	if (Character->IsLocallyControlled()) bAimKeyPressed = bIsAiming;
 }
 
 void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
@@ -680,6 +692,7 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
+	if (bLocallyReloading) return false;
 	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
 	return bCanFire && !EquippedWeapon->IsEmpty() && CombatState == ECombatState::ECS_Unoccupied;
 }

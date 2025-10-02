@@ -40,7 +40,6 @@ void ABasePlayerHUD::AddAnnouncement()
 
 void ABasePlayerHUD::AddElimAnnouncement(FString EliminationText)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Add elim announcement")));
 	OwningPlayer = OwningPlayer == nullptr ? GetOwningPlayerController() : OwningPlayer;
 	
 	if (OwningPlayer && ElimAnnouncementClass)

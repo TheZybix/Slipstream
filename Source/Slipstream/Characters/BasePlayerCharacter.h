@@ -8,6 +8,7 @@
 #include "Slipstream/Types/TurningInPlace.h"
 #include "Slipstream/Interfaces/InteractWithCrosshairsInterface.h"
 #include "Components/TimelineComponent.h"
+#include "Slipstream/Components/CombatComponent.h"
 #include "BasePlayerCharacter.generated.h"
 
 class UNiagaraComponent;
@@ -369,6 +370,7 @@ public:
 	FORCEINLINE bool CheckDisableGameplay() const { return bDisableGameplay; }
 	FORCEINLINE UAnimMontage* GetShotgunMontage() const { return ShotgunMontage; }
 	FORCEINLINE UStaticMeshComponent* GetGrenadeMesh() const { return AttachedGrenade; }
+	bool IsLocallyRelaoding();
 };
 
 

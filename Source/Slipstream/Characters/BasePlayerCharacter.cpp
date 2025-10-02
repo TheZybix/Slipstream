@@ -900,3 +900,9 @@ ECombatState ABasePlayerCharacter::GetCombatState() const
 		
 	return CombatComponent->CombatState;
 }
+
+bool ABasePlayerCharacter::IsLocallyRelaoding()
+{
+	if (CombatComponent == nullptr) return false;
+	return CombatComponent->bLocallyReloading;
+}

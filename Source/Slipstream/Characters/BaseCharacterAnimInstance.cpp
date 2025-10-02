@@ -78,6 +78,10 @@ void UBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	}
 
 	bUseFabrik = PlayerCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
+	if (PlayerCharacter->IsLocallyControlled() && PlayerCharacter->GetCombatState() != ECombatState::ECS_ThrowingGrenade)
+	{
+		bUseFabrik = !PlayerCharacter->IsLocallyRelaoding();
+	}
 	bUseAimOffset = PlayerCharacter->GetCombatState() == ECombatState::ECS_Unoccupied && !PlayerCharacter->CheckDisableGameplay();
 	bUseRightHand = PlayerCharacter->GetCombatState() == ECombatState::ECS_Unoccupied && !PlayerCharacter->CheckDisableGameplay();
 }
