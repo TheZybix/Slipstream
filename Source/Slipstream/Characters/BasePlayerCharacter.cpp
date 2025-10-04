@@ -22,9 +22,11 @@
 #include "Slipstream/GameModes/SlipstreamGameMode.h"
 #include "Slipstream/PlayerController/BasePlayerController.h"
 #include "TimerManager.h"
+#include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Slipstream/Components/BuffComponent.h"
+#include "Slipstream/Components/LagCompensationComponent.h"
 #include "Slipstream/GameState/SlipstreamGameState.h"
 #include "Slipstream/HUD/ReturnToMainMenu.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
@@ -59,6 +61,8 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("Buff"));
 	BuffComponent->SetIsReplicated(true);
 
+	LagCompensationComponent = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensation"));
+
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 1000.f);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
@@ -75,6 +79,83 @@ ABasePlayerCharacter::ABasePlayerCharacter()
 	MinNetUpdateFrequency = 3.0f;
 
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Dissolve Timeline"));
+
+
+	/* Hitboxes for server side rewind */
+	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
+	head->SetupAttachment(GetMesh(), FName("head"));
+	HitBoxes.Add(FName("head"), head);
+	
+	pelvis = CreateDefaultSubobject<UBoxComponent>(TEXT("pelvis"));
+	pelvis->SetupAttachment(GetMesh(), FName("pelvis"));
+	HitBoxes.Add(FName("pelvis"), pelvis);
+	
+	spine_02 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_02"));
+	spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
+	HitBoxes.Add(FName("spine_02"), spine_02);
+	
+	spine_03 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_03"));
+	spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
+	HitBoxes.Add(FName("spine_03"), spine_03);
+	
+	upperarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_l"));
+	upperarm_l->SetupAttachment(GetMesh(), FName("upperarm_l"));
+	HitBoxes.Add(FName("upperarm_l"), upperarm_l);
+	
+	upperarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_r"));
+	upperarm_r->SetupAttachment(GetMesh(), FName("upperarm_r"));
+	HitBoxes.Add(FName("upperarm_r"), upperarm_r);
+	
+	lowerarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_l"));
+	lowerarm_l->SetupAttachment(GetMesh(), FName("lowerarm_l"));
+	HitBoxes.Add(FName("lowerarm_l"), lowerarm_l);
+	
+	lowerarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_r"));
+	lowerarm_r->SetupAttachment(GetMesh(), FName("lowerarm_r"));
+	HitBoxes.Add(FName("lowerarm_r"), lowerarm_r);
+	
+	hand_l = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_l"));
+	hand_l->SetupAttachment(GetMesh(), FName("hand_l"));
+	HitBoxes.Add(FName("hand_l"), hand_l);
+	
+	hand_r = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_r"));
+	hand_r->SetupAttachment(GetMesh(), FName("hand_r"));
+	HitBoxes.Add(FName("hand_r"), hand_r);
+	
+	thigh_l = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_l"));
+	thigh_l->SetupAttachment(GetMesh(), FName("thigh_l"));
+	HitBoxes.Add(FName("thigh_l"), thigh_l);
+	
+	thigh_r = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_r"));
+	thigh_r->SetupAttachment(GetMesh(), FName("thigh_r"));
+	HitBoxes.Add(FName("thigh_r"), thigh_r);
+	
+	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
+	calf_l->SetupAttachment(GetMesh(), FName("calf_l"));
+	HitBoxes.Add(FName("calf_l"), calf_l);
+	
+	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
+	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
+	HitBoxes.Add(FName("calf_r"), calf_r);
+	
+	foot_l = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_l"));
+	foot_l->SetupAttachment(GetMesh(), FName("foot_l"));
+	HitBoxes.Add(FName("foot_l"), foot_l);
+	
+	foot_r = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_r"));
+	foot_r->SetupAttachment(GetMesh(), FName("foot_r"));
+	HitBoxes.Add(FName("foot_r"), foot_r);
+
+	for (auto Box : HitBoxes)
+	{
+		if (Box.Value)
+		{
+			Box.Value->SetCollisionObjectType(ECC_HitBox);
+			Box.Value->SetCollisionResponseToAllChannels(ECR_Ignore);
+			Box.Value->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
+			Box.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
 }
 
 void ABasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -103,6 +184,11 @@ void ABasePlayerCharacter::PostInitializeComponents()
 		BuffComponent->Character = this;
 		BuffComponent->SetInitialSpeeds(GetCharacterMovement()->MaxWalkSpeed, GetCharacterMovement()->MaxWalkSpeedCrouched);
 		BuffComponent->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
+	}
+	if (LagCompensationComponent)
+	{
+		LagCompensationComponent->Character = this;
+		if (PlayerController) LagCompensationComponent->PlayerController = Cast<ABasePlayerController>(Controller);
 	}
 }
 
@@ -172,6 +258,15 @@ void ABasePlayerCharacter::PlayDeathMontage()
 	if (AnimInstance && DeathMontage)
 	{
 		AnimInstance->Montage_Play(DeathMontage);
+	}
+}
+
+void ABasePlayerCharacter::PlaySwapWeaponMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && SwapWeaponMontage)
+	{
+		AnimInstance->Montage_Play(SwapWeaponMontage);
 	}
 }
 
@@ -272,7 +367,7 @@ void ABasePlayerCharacter::ServerLeaveGame_Implementation()
 
 void ABasePlayerCharacter::PlayHitReactMontage()
 {
-	if (!CombatComponent || !CombatComponent->EquippedWeapon || CombatComponent->CombatState == ECombatState::ECS_Reloading || CombatComponent->CombatState == ECombatState::ECS_ThrowingGrenade) return;
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr || CombatComponent->CombatState != ECombatState::ECS_Unoccupied) return;
 	
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReactMontage)
@@ -686,7 +781,13 @@ void ABasePlayerCharacter::EquipKeyPressed(const FInputActionValue& Value)
 	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
-		ServerEquipKeyPressed();
+		if (CombatComponent->CombatState == ECombatState::ECS_Unoccupied) ServerEquipKeyPressed();
+		if (CombatComponent->ShouldSwapWeapons() && !HasAuthority() && CombatComponent->CombatState == ECombatState::ECS_Unoccupied && OverlappingWeapon == nullptr)
+		{
+			PlaySwapWeaponMontage();
+			CombatComponent->CombatState = ECombatState::ECS_SwappingWeapons;
+			bFinishedSwapping = false;
+		}
 	}
 }
 
@@ -696,7 +797,10 @@ void ABasePlayerCharacter::ServerEquipKeyPressed_Implementation()
 	if (CombatComponent)
 	{
 		if (OverlappingWeapon) CombatComponent->EquipWeapon(OverlappingWeapon);
-		else if (CombatComponent->ShouldSwapWeapons()) CombatComponent->SwapWeapon();
+		else if (CombatComponent->ShouldSwapWeapons())
+		{
+			CombatComponent->SwapWeapon();
+		}
 	}
 }
 

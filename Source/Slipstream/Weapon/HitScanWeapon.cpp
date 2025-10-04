@@ -9,6 +9,8 @@
 #include "Slipstream/Characters/BasePlayerCharacter.h"
 #include "Slipstream/Types/WeaponTypes.h"
 #include "DrawDebugHelpers.h"
+#include "Slipstream/Components/LagCompensationComponent.h"
+#include "Slipstream/PlayerController/BasePlayerController.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -26,14 +28,31 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		FHitResult FireHit;
 		WeaponTraceHit(HitTarget, Start, FireHit);
 		ABasePlayerCharacter* PlayerCharacter = Cast<ABasePlayerCharacter>(FireHit.GetActor());
-		if (PlayerCharacter && HasAuthority() && InstigatorController)
+
+		if (PlayerCharacter && InstigatorController)
 		{
-			float DamageToCause = Damage;
-			if (FireHit.BoneName.ToString() == FString("head"))
+			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+			if (HasAuthority() && bCauseAuthDamage)
 			{
-				DamageToCause = HeadshotDamage;
+			
+				float DamageToCause = Damage;
+				if (FireHit.BoneName.ToString() == FString("head"))
+				{
+					DamageToCause = HeadshotDamage;
+				}
+				UGameplayStatics::ApplyDamage(PlayerCharacter, DamageToCause, InstigatorController, this, UDamageType::StaticClass());
 			}
-			UGameplayStatics::ApplyDamage(PlayerCharacter, DamageToCause, InstigatorController, this, UDamageType::StaticClass());
+		
+			if (!HasAuthority() && bUseServerSideRewind)
+			{
+				OwnerCharacter = OwnerCharacter == nullptr ? Cast<ABasePlayerCharacter>(OwnerPawn) : OwnerCharacter;
+				OwnerController = OwnerController == nullptr ? Cast<ABasePlayerController>(InstigatorController) : OwnerController;
+				if (OwnerCharacter && OwnerCharacter->GetLagCompensation() && OwnerCharacter->IsLocallyControlled() && OwnerController)
+				{
+					OwnerCharacter->GetLagCompensation()->ServerScoreRequest(PlayerCharacter, Start, FireHit.ImpactPoint, OwnerController->GetServerTime() - OwnerController->SingleTripTime);
+				}
+
+			}
 		}
 		if (HitParticle)
 		{

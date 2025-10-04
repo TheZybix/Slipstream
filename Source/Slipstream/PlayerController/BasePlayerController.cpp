@@ -7,7 +7,6 @@
 #include "Components/ProgressBar.h"
 #include "Slipstream/HUD/BasePlayerHUD.h"
 #include "Slipstream/HUD/CharacterOverlay.h"
-#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/GameMode.h"
 #include "Kismet/GameplayStatics.h"
@@ -155,6 +154,11 @@ void ABasePlayerController::StopHighPingWarning()
 	}
 }
 
+void ABasePlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+	HighPingDelegate.Broadcast(bHighPing);
+}
+
 void ABasePlayerController::CheckPing(float DeltaTime)
 {
 	PlayerState = PlayerState == nullptr ? GetPlayerState<ABasePlayerState>() : PlayerState;
@@ -170,6 +174,11 @@ void ABasePlayerController::CheckPing(float DeltaTime)
 			{
 				HighPingWarning();
 				PingAnimationRunningTime = 0.f;
+				ServerReportPingStatus(true);
+			}
+			else
+			{
+				ServerReportPingStatus(false);
 			}
 		}
 		HighPingRunningTime = 0.f;
@@ -188,7 +197,8 @@ void ABasePlayerController::ClientReportServerTime_Implementation(float TimeOfCl
                                                                   float TimeSeverReceivedClientRequest)
 {
 	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
-	float CurrentServerTime = TimeSeverReceivedClientRequest + (0.5f * RoundTripTime);
+	SingleTripTime = 0.5f * RoundTripTime;
+	float CurrentServerTime = TimeSeverReceivedClientRequest + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
 }
 

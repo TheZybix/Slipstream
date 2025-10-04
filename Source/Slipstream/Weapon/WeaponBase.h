@@ -118,6 +118,15 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,	UPrimitiveComponent* OtherComp,	int32 OtherBodyIndex);
 
+	UPROPERTY()
+	ABasePlayerCharacter* OwnerCharacter;
+
+	UPROPERTY()
+	ABasePlayerController* OwnerController;
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 15.f;
+	
 	UPROPERTY(EditAnywhere)
 	float HeadshotDamage = 15.f;
 
@@ -127,6 +136,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Scatter")
 	float SphereRadius = 800.f;
+
+	UPROPERTY(EditAnywhere, Replicated)
+	bool bUseServerSideRewind = false;
+
+	UFUNCTION()
+	void OnPingTooHigh(bool bPingTooHigh);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
@@ -188,12 +203,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	int32 MagCapacity;
 
-	UPROPERTY()
-	ABasePlayerCharacter* OwnerCharacter;
-
-	UPROPERTY()
-	ABasePlayerController* OwnerController;
-
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
 
@@ -219,6 +228,7 @@ public:
 	FORCEINLINE int32 GetMagAmmo() const { return Ammo; }
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 	FORCEINLINE int32 GetStoredMaxAmmo() const { return StoredMaxAmmo; }
+	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadshotDamage() const { return HeadshotDamage; }
 	bool IsEmpty();
 	bool IsFull();

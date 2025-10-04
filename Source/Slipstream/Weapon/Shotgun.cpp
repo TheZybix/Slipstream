@@ -7,6 +7,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
+#include "Slipstream/Components/LagCompensationComponent.h"
+#include "Slipstream/PlayerController/BasePlayerController.h"
 #include "Slipstream/Types/WeaponTypes.h"
 
 void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
@@ -70,12 +72,26 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 			}
 		}
 
+		TArray<ABasePlayerCharacter*> HitCharacters;
 		for (auto DamageHitPair : DamageMap)
 		{
-			if (DamageHitPair.Key && HasAuthority())
+			if (DamageHitPair.Key && InstigatorController)
 			{
-				UGameplayStatics::ApplyDamage(DamageHitPair.Key, DamageHitPair.Value, InstigatorController, this, UDamageType::StaticClass());
+				bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+				if (HasAuthority() && bCauseAuthDamage) UGameplayStatics::ApplyDamage(DamageHitPair.Key, DamageHitPair.Value, InstigatorController, this, UDamageType::StaticClass());
+				HitCharacters.Add(DamageHitPair.Key);
 			}
+		}
+		
+		if (!HasAuthority() && bUseServerSideRewind)
+		{
+			OwnerCharacter = OwnerCharacter == nullptr ? Cast<ABasePlayerCharacter>(OwnerPawn) : OwnerCharacter;
+			OwnerController = OwnerController == nullptr ? Cast<ABasePlayerController>(InstigatorController) : OwnerController;
+			if (OwnerCharacter && OwnerCharacter->GetLagCompensation() && OwnerCharacter->IsLocallyControlled() &&OwnerController)
+			{
+				OwnerCharacter->GetLagCompensation()->ServerShotgunScoreRequest(HitCharacters, Start, HitTargets, OwnerController->GetServerTime() - OwnerController->SingleTripTime);
+			}
+
 		}
 	}
 }

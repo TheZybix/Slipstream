@@ -11,6 +11,8 @@
 #include "Slipstream/Components/CombatComponent.h"
 #include "BasePlayerCharacter.generated.h"
 
+class ULagCompensationComponent;
+class UBoxComponent;
 class UNiagaraComponent;
 class UNiagaraSystem;
 class UReturnToMainMenu;
@@ -49,6 +51,7 @@ public:
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
 	void PlayDeathMontage();
+	void PlaySwapWeaponMontage();
 
 	void Elim(bool bPlayerLeftGame);
 	UFUNCTION(NetMulticast, Reliable)
@@ -79,6 +82,10 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastLostTheLead();
 
+	UPROPERTY()
+	TMap<FName, UBoxComponent*> HitBoxes;
+
+	bool bFinishedSwapping = false;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -130,6 +137,56 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	TObjectPtr<UInputAction> PauseAction;
+
+	/* Hitboxes used for server-side rewind */
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* head;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* pelvis;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_02;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_03;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_l;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_r;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_l;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_r;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_l;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_r;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_l;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_r;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_l;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_r;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_l;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_r;
 	
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -158,11 +215,15 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeaponBase* LastWeapon);
 
+	/* Player components */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true), Category = "Combat")
 	UCombatComponent* CombatComponent;
 
 	UPROPERTY(VisibleAnywhere)
 	UBuffComponent* BuffComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	ULagCompensationComponent* LagCompensationComponent;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipKeyPressed();
@@ -197,6 +258,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* DeathMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* SwapWeaponMontage;
 
 	void HideCameraIfCharacterClose();
 	void CalculateAO_Pitch();
@@ -366,6 +430,7 @@ public:
 	ECombatState GetCombatState() const;
 	FORCEINLINE UCombatComponent* GetCombat() const { return CombatComponent; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return BuffComponent; }
+	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensationComponent; }
 
 	FORCEINLINE bool CheckDisableGameplay() const { return bDisableGameplay; }
 	FORCEINLINE UAnimMontage* GetShotgunMontage() const { return ShotgunMontage; }
