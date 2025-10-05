@@ -53,26 +53,29 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, FireHit.ImpactPoint, FireHit.ImpactNormal.Rotation());
 			}
 		}
+		
+		TArray<ABasePlayerCharacter*> HitCharacters;
 		TMap<ABasePlayerCharacter*, float> DamageMap;
 		
 		for (auto HitPair : HitMap)
 		{
-			if (HitPair.Key && HasAuthority())
+			if (HitPair.Key)
 			{
 				DamageMap.Emplace(HitPair.Key, HitPair.Value * Damage);
+				HitCharacters.AddUnique(HitPair.Key);
 			}
 		}
 
 		for (auto HeadshotHitPair : HeadshotHitMap)
 		{
-			if (HeadshotHitPair.Key && HasAuthority())
+			if (HeadshotHitPair.Key)
 			{
 				if (DamageMap.Contains(HeadshotHitPair.Key)) DamageMap[HeadshotHitPair.Key] += HeadshotHitPair.Value * HeadshotDamage;
-				else HitMap.Emplace(HeadshotHitPair.Key,  HeadshotHitPair.Value * HeadshotDamage);
+				else DamageMap.Emplace(HeadshotHitPair.Key,  HeadshotHitPair.Value * HeadshotDamage);
+				HitCharacters.AddUnique(HeadshotHitPair.Key);
 			}
 		}
 
-		TArray<ABasePlayerCharacter*> HitCharacters;
 		for (auto DamageHitPair : DamageMap)
 		{
 			if (DamageHitPair.Key && InstigatorController)
@@ -87,7 +90,7 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 		{
 			OwnerCharacter = OwnerCharacter == nullptr ? Cast<ABasePlayerCharacter>(OwnerPawn) : OwnerCharacter;
 			OwnerController = OwnerController == nullptr ? Cast<ABasePlayerController>(InstigatorController) : OwnerController;
-			if (OwnerCharacter && OwnerCharacter->GetLagCompensation() && OwnerCharacter->IsLocallyControlled() &&OwnerController)
+			if (OwnerCharacter && OwnerCharacter->GetLagCompensation() && OwnerCharacter->IsLocallyControlled() && OwnerController)
 			{
 				OwnerCharacter->GetLagCompensation()->ServerShotgunScoreRequest(HitCharacters, Start, HitTargets, OwnerController->GetServerTime() - OwnerController->SingleTripTime);
 			}

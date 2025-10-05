@@ -198,7 +198,7 @@ void UCombatComponent::SetCombatState(ECombatState NewCombatState)
 	}
 	if (CombatState == ECombatState::ECS_SwappingWeapons)
 	{
-		if (SecondaryWeapon) SecondaryWeapon->EnableCustomDepth(false);
+		if (SecondaryWeapon) SecondaryWeapon->EnableCustomDepth(true);
 	}
 	if (Character) Character->bFinishedSwapping = true;
 	if (Character->HasAuthority()) CombatState = NewCombatState;

@@ -16,9 +16,6 @@ ULagCompensationComponent::ULagCompensationComponent()
 void ULagCompensationComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	FFramePackage Package;
-	SaveFramePackage(Package);
 }
 
 void ULagCompensationComponent::SaveFramePackage()
@@ -308,14 +305,11 @@ void ULagCompensationComponent::CacheBoxPositions(ABasePlayerCharacter* HitChara
 	{
 		if (HitBoxPair.Value != nullptr)
 		{
-			if (HitCharacter == nullptr)
-			{
 				FBoxInformation BoxInfo;
 				BoxInfo.Location = HitBoxPair.Value->GetComponentLocation();
 				BoxInfo.Rotation = HitBoxPair.Value->GetComponentRotation();
 				BoxInfo.BoxExtent = HitBoxPair.Value->GetScaledBoxExtent();
 				Package.HitBoxInfo.Add(HitBoxPair.Key, BoxInfo);
-			}
 		}
 	}
 }
@@ -473,7 +467,7 @@ void ULagCompensationComponent::ServerProjectileScoreRequest_Implementation(ABas
 	if (Character && HitCharacter && HitCharacter->GetEquippedWeapon() && Confirm.bHitConfirmed && Character->GetEquippedWeapon())
 	{
 		const float Damage = Confirm.bHeadShot ? Character->GetEquippedWeapon()->GetHeadshotDamage() : Character->GetEquippedWeapon()->GetDamage();
-		UGameplayStatics::ApplyDamage(HitCharacter, HitCharacter->GetEquippedWeapon()->GetDamage(), Character->Controller,HitCharacter->GetEquippedWeapon(), UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(HitCharacter, Damage, Character->Controller,HitCharacter->GetEquippedWeapon(), UDamageType::StaticClass());
 	}
 }
 
@@ -492,13 +486,13 @@ void ULagCompensationComponent::ServerShotgunScoreRequest_Implementation(
 		{
 			float HeadShotDamage = Confirm.HeadShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetHeadshotDamage();
 			DamageToDeal += HeadShotDamage;
-			if(GEngine) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("HeadshotDamage: %f"), HeadShotDamage));
+			if(GEngine) GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Red, FString::Printf(TEXT("HeadshotDamage: %f"), HeadShotDamage));
 		} 
 		if (Confirm.BodyShots.Contains(HitCharacter))
 		{
 			float BodyShotDamage = Confirm.BodyShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetDamage();
 			DamageToDeal += BodyShotDamage;
-			if(GEngine) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("BodyDamage: %f"), BodyShotDamage));
+			if(GEngine) GEngine->AddOnScreenDebugMessage(6, 5.f, FColor::Red, FString::Printf(TEXT("BodyDamage: %f"), BodyShotDamage));
 		}
 		UGameplayStatics::ApplyDamage(HitCharacter, DamageToDeal, Character->Controller,HitCharacter->GetEquippedWeapon(), UDamageType::StaticClass());
 	}
