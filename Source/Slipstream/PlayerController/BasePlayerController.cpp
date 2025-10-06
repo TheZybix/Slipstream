@@ -68,17 +68,19 @@ void ABasePlayerController::PollInit()
 			CharacterOverlay = PlayerHUD->CharacterOverlay;
 			if (CharacterOverlay)
 			{
-				if (!bInitializeHealth) SetHUDHealth(HUDHealth, HUDMaxHealth);
-				if (!bInitializeShield) SetHUDShield(HUDShield, HUDMaxShield);
-				if (!bInitializeScore) SetHUDScore(HUDScore);
-				if (!bInitializeDefeat) SetHUDDefeat(HUDDefeat);
-				if (!bInitializeMagAmmo) SetHUDWeaponAmmo(HUDMagAmmo);
-				if (!bInitializeStoredAmmo) SetHUDStoredAmmo(HUDStoredAmmo);
+				if (bInitializeHealth) SetHUDHealth(HUDHealth, HUDMaxHealth);
+				if (bInitializeShield) SetHUDShield(HUDShield, HUDMaxShield);
+				if (bInitializeScore) SetHUDScore(HUDScore);
+				if (bInitializeDefeat) SetHUDDefeat(HUDDefeat);
+				if (bInitializeMagAmmo) SetHUDWeaponAmmo(HUDMagAmmo);
+				if (bInitializeStoredAmmo) SetHUDStoredAmmo(HUDStoredAmmo);
+				if (bInitializeBlueTeamScore) SetHUDBlueTeamScore(HUDBlueTeamScore, HUDMaxBlueTeamScore);
+				if (bInitializeRedTeamScore) SetHUDRedTeamScore(HUDRedTeamScore, HUDMaxRedTeamScore);
 
 				ABasePlayerCharacter* PlayerCharacter = Cast<ABasePlayerCharacter>(GetPawn());
 				if (PlayerCharacter && PlayerCharacter->GetCombat())
 				{
-					if (!bInitializeGrenades) SetHUDGrenades(PlayerCharacter->GetCombat()->GetGrenades());
+					if (bInitializeGrenades) SetHUDGrenades(PlayerCharacter->GetCombat()->GetGrenades());
 				}
 			}
 		}
@@ -342,6 +344,7 @@ void ABasePlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 
 void ABasePlayerController::SetHUDGrenades(int32 Grenades)
 {
+	if(GEngine) GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Red, FString::Printf(TEXT("Set Grenades")));
 	PlayerHUD = PlayerHUD == nullptr ? Cast<ABasePlayerHUD>(GetHUD()) : PlayerHUD;
 	if (PlayerHUD && PlayerHUD->CharacterOverlay && PlayerHUD->CharacterOverlay->GrenadeText)
 	{
@@ -351,6 +354,7 @@ void ABasePlayerController::SetHUDGrenades(int32 Grenades)
 	else
 	{
 		HUDGrenades = Grenades;
+		bInitializeGrenades = true;
 	}
 }
 
@@ -404,6 +408,12 @@ void ABasePlayerController::SetHUDRedTeamScore(int32 RedScore, int32 MaxScore)
 		PlayerHUD->CharacterOverlay->RedTeamBar->SetPercent(Percent);
 		PlayerHUD->CharacterOverlay->RedTeamText->SetText(FText::FromString(ScoreText));
 	}
+	else
+	{
+		HUDRedTeamScore = RedScore;
+		HUDMaxRedTeamScore = MaxScore;
+		bInitializeRedTeamScore = true;
+	}
 }
 
 void ABasePlayerController::SetHUDBlueTeamScore(int32 BlueScore, int32 MaxScore)
@@ -415,6 +425,12 @@ void ABasePlayerController::SetHUDBlueTeamScore(int32 BlueScore, int32 MaxScore)
 	{
 		PlayerHUD->CharacterOverlay->BlueTeamBar->SetPercent(Percent);
 		PlayerHUD->CharacterOverlay->BlueTeamText->SetText(FText::FromString(ScoreText));
+	}
+	else
+	{
+		HUDBlueTeamScore = BlueScore;
+		HUDMaxBlueTeamScore = MaxScore;
+		bInitializeBlueTeamScore = true;
 	}
 }
 

@@ -40,7 +40,7 @@ void ASlipstreamGameState::RedTeamScores()
 	ABasePlayerController* PlayerController = Cast<ABasePlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PlayerController)
 	{
-		PlayerController->SetHUDRedTeamScore(RedTeamScore, 50);
+		PlayerController->SetHUDRedTeamScore(RedTeamScore, TeamDeathMatchMaxScore);
 	}
 }
 
@@ -50,7 +50,7 @@ void ASlipstreamGameState::BlueTeamScores()
 	ABasePlayerController* PlayerController = Cast<ABasePlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PlayerController)
 	{
-		PlayerController->SetHUDBlueTeamScore(BlueTeamScore, 50);
+		PlayerController->SetHUDBlueTeamScore(BlueTeamScore, TeamDeathMatchMaxScore);
 	}
 }
 
@@ -59,7 +59,7 @@ void ASlipstreamGameState::OnRep_RedTeamScore()
 	ABasePlayerController* PlayerController = Cast<ABasePlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PlayerController)
 	{
-		PlayerController->SetHUDRedTeamScore(RedTeamScore, 50);
+		PlayerController->SetHUDRedTeamScore(RedTeamScore, TeamDeathMatchMaxScore);
 	}
 }
 
@@ -68,6 +68,6 @@ void ASlipstreamGameState::OnRep_BlueTeamScore()
 	ABasePlayerController* PlayerController = Cast<ABasePlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PlayerController)
 	{
-		PlayerController->SetHUDBlueTeamScore(BlueTeamScore, 50);
+		PlayerController->SetHUDBlueTeamScore(BlueTeamScore, TeamDeathMatchMaxScore);
 	}
 }

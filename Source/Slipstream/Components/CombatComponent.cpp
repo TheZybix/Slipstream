@@ -48,7 +48,7 @@ void UCombatComponent::BeginPlay()
 			CurrentFOV = DefaultFOV;
 		}
 		SpawnDefaultWeapon();
-		Character->UpdateHUDAmmo();
+		UpdateHUDGrenades();
 	}
 }
 
@@ -647,7 +647,11 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		}
 		
 		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
-		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECollisionChannel::ECC_Visibility);
+
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(GetOwner());
+		
+		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECollisionChannel::ECC_Visibility, QueryParams);
 		if (!TraceHitResult.bBlockingHit) TraceHitResult.ImpactPoint = End;
 
 		if (TraceHitResult.GetActor() && TraceHitResult.GetActor()->Implements<UInteractWithCrosshairsInterface>())

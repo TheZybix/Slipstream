@@ -30,6 +30,9 @@ public:
 	TArray<ABasePlayerState*> RedTeam;
 	TArray<ABasePlayerState*> BlueTeam;
 
+	UPROPERTY(EditAnywhere)
+	float TeamDeathMatchMaxScore = 50;
+
 	UPROPERTY(ReplicatedUsing=OnRep_RedTeamScore)
 	float RedTeamScore = 0.f;
 

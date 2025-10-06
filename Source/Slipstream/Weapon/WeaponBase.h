@@ -180,10 +180,10 @@ private:
 	int32 Ammo;
 
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_StoredAmmo)
-	int32 StoredAmmo;
+	int32 StoredAmmo = 10;
 
 	UPROPERTY(EditAnywhere)
-	int32 StoredMaxAmmo;
+	int32 StoredMaxAmmo = 10;
 
 	UFUNCTION()
 	void OnRep_StoredAmmo();

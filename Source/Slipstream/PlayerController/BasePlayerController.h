@@ -124,6 +124,8 @@ private:
 	bool bInitializeGrenades = false;
 	bool bInitializeMagAmmo = false;
 	bool bInitializeStoredAmmo = false;
+	bool bInitializeRedTeamScore = false;
+	bool bInitializeBlueTeamScore = false;
 
 	float HUDHealth;
 	float HUDMaxHealth;
@@ -134,7 +136,11 @@ private:
 	int32 HUDGrenades;
 	float HUDStoredAmmo;
 	float HUDMagAmmo;
-	
+	int32 HUDBlueTeamScore;
+	int32 HUDRedTeamScore;
+	int32 HUDMaxRedTeamScore;
+	int32 HUDMaxBlueTeamScore;
+
 	float PingAnimationRunningTime = 0.f;
 
 	UPROPERTY(EditAnywhere)

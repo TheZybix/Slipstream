@@ -550,6 +550,15 @@ void ABasePlayerCharacter::BeginPlay()
 	
 	UpdateHUDHealth();
 	UpdateHUDShield();
+
+	ASlipstreamGameState* CombatGameState = Cast<ASlipstreamGameState>(UGameplayStatics::GetGameState(this));
+	PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
+	if (PlayerController && CombatGameState)
+	{
+		PlayerController->SetHUDRedTeamScore(CombatGameState->RedTeamScore, CombatGameState->TeamDeathMatchMaxScore);
+		PlayerController->SetHUDBlueTeamScore(CombatGameState->BlueTeamScore, CombatGameState->TeamDeathMatchMaxScore);
+	}
+	
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABasePlayerCharacter::ReceiveDamage);
