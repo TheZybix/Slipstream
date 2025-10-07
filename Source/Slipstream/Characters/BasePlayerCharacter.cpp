@@ -27,6 +27,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Slipstream/Components/BuffComponent.h"
 #include "Slipstream/Components/LagCompensationComponent.h"
+#include "Slipstream/GameModes/TeamDeathMatchGameMode.h"
 #include "Slipstream/GameState/SlipstreamGameState.h"
 #include "Slipstream/HUD/ReturnToMainMenu.h"
 #include "Slipstream/PlayerState/BasePlayerState.h"
@@ -273,6 +274,7 @@ void ABasePlayerCharacter::PlaySwapWeaponMontage()
 void ABasePlayerCharacter::Elim(bool bPlayerLeftGame)
 {
 	MulticastElim(bPlayerLeftGame);
+	SetCustomDepthStencilForNonLocalPlayers(false);
 	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
 		if (CombatComponent->EquippedWeapon->bDestroyWeapon) CombatComponent->EquippedWeapon->Destroy();
@@ -286,6 +288,7 @@ void ABasePlayerCharacter::Elim(bool bPlayerLeftGame)
 void ABasePlayerCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 {
 	bLeftGame = bPlayerLeftGame;
+	SetCustomDepthStencilForNonLocalPlayers(false);
 	if (PlayerController)
 	{
 		PlayerController->SetHUDWeaponAmmo(0);
@@ -476,6 +479,12 @@ void ABasePlayerCharacter::PollInit()
 			MulticastGainTheLead();
 		}
 	}
+
+	if (!bShowCharacterOutline && !IsLocallyControlled())
+	{
+		if(GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Activating Outline")));
+		SetCustomDepthStencilForNonLocalPlayers(true);
+	}
 }
 
 void ABasePlayerCharacter::InitializeMaterials()
@@ -552,11 +561,15 @@ void ABasePlayerCharacter::BeginPlay()
 	UpdateHUDShield();
 
 	ASlipstreamGameState* CombatGameState = Cast<ASlipstreamGameState>(UGameplayStatics::GetGameState(this));
-	PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
-	if (PlayerController && CombatGameState)
+
+	if (CombatGameState)
 	{
-		PlayerController->SetHUDRedTeamScore(CombatGameState->RedTeamScore, CombatGameState->TeamDeathMatchMaxScore);
-		PlayerController->SetHUDBlueTeamScore(CombatGameState->BlueTeamScore, CombatGameState->TeamDeathMatchMaxScore);
+		PlayerController = PlayerController == nullptr ? Cast<ABasePlayerController>(Controller) : PlayerController;
+		if (PlayerController)
+		{
+			PlayerController->SetHUDRedTeamScore(CombatGameState->RedTeamScore, CombatGameState->TeamDeathMatchMaxScore);
+			PlayerController->SetHUDBlueTeamScore(CombatGameState->BlueTeamScore, CombatGameState->TeamDeathMatchMaxScore);
+		}
 	}
 	
 	if (HasAuthority())
@@ -567,6 +580,59 @@ void ABasePlayerCharacter::BeginPlay()
 	if (AttachedGrenade)
 	{
 		AttachedGrenade->SetVisibility(false);
+	}
+}
+
+void ABasePlayerCharacter::SetCustomDepthStencilForNonLocalPlayers(bool bShowOutline)
+{
+	if (!bShowOutline)
+	{
+		GetMesh()->SetRenderCustomDepth(false);
+		bShowCharacterOutline = false;
+		return;
+	}
+	if(GEngine) GEngine->AddOnScreenDebugMessage(5, 20.f, FColor::Red, FString::Printf(TEXT("Enable Custom Depth")));
+	
+	if(!IsLocallyControlled())
+	{
+		ABasePlayerCharacter* LocalPlayerCharacter = Cast<ABasePlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+		BasePlayerState = BasePlayerState == nullptr ? GetPlayerState<ABasePlayerState>() : BasePlayerState;
+		if(GEngine) GEngine->AddOnScreenDebugMessage(6, 20.f, FColor::Red, FString::Printf(TEXT("Is not locally controlled")));
+		
+		if (LocalPlayerCharacter)
+		{
+			ABasePlayerState* LocalPlayerState = LocalPlayerCharacter->BasePlayerState;
+			ASlipstreamGameState* GameState = Cast<ASlipstreamGameState>(UGameplayStatics::GetGameState(this));
+		
+			if (GameState && GameState->bTeamsMatch && LocalPlayerState) //This is Team Death Match
+			{
+				if(GEngine) GEngine->AddOnScreenDebugMessage(7, 20.f, FColor::Red, FString::Printf(TEXT("Is Team Death Match")));
+				if (BasePlayerState && BasePlayerState->GetTeam() == LocalPlayerState->GetTeam())
+				{
+					if(GEngine) GEngine->AddOnScreenDebugMessage(8, 20.f, FColor::Red, FString::Printf(TEXT("Is on Own Team")));
+					GetMesh()->SetRenderCustomDepth(true);
+					GetMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+					GetMesh()->MarkRenderStateDirty();
+					bShowCharacterOutline = true;
+				}
+				else if (BasePlayerState && BasePlayerState->GetTeam() != LocalPlayerState->GetTeam())
+				{
+					if(GEngine) GEngine->AddOnScreenDebugMessage(9, 20.f, FColor::Red, FString::Printf(TEXT("Is on Enemy Team")));
+					GetMesh()->SetRenderCustomDepth(true);
+					GetMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_RED);
+					GetMesh()->MarkRenderStateDirty();
+					bShowCharacterOutline = true;
+				}
+			}
+			else if (GameState && !GameState->bTeamsMatch) //This is Free for All
+			{
+				if(GEngine) GEngine->AddOnScreenDebugMessage(10, 20.f, FColor::Red, FString::Printf(TEXT("Is Free For All")));
+				GetMesh()->SetRenderCustomDepth(true);
+				GetMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_RED);
+				GetMesh()->MarkRenderStateDirty();
+				bShowCharacterOutline = true;
+			}
+		}
 	}
 }
 

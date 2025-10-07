@@ -11,6 +11,9 @@
 #include "Slipstream/Components/CombatComponent.h"
 #include "BasePlayerCharacter.generated.h"
 
+#define CUSTOM_DEPTH_BLUE 248
+#define CUSTOM_DEPTH_RED 249
+
 class ULagCompensationComponent;
 class UBoxComponent;
 class UNiagaraComponent;
@@ -86,6 +89,8 @@ public:
 	TMap<FName, UBoxComponent*> HitBoxes;
 
 	bool bFinishedSwapping = false;
+	void SetCustomDepthStencilForNonLocalPlayers(bool bShowOutline);
+
 	
 protected:
 	// Called when the game starts or when spawned
@@ -402,6 +407,8 @@ private:
 	bool bReturnToMainMenuOpen = false;
 	
 	ASlipstreamGameMode* SlipstreamGameMode;
+
+	bool bShowCharacterOutline = false;
 	
 public:
 	void SetOverlappingWeapon(AWeaponBase* Weapon);

@@ -2,7 +2,6 @@
 
 
 #include "SlipstreamGameMode.h"
-
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "Slipstream/Characters/BasePlayerCharacter.h"
@@ -24,6 +23,12 @@ void ASlipstreamGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	LevelStartingTime = GetWorld()->GetTimeSeconds();
+	
+	ASlipstreamGameState* CurrentGameState = GetGameState<ASlipstreamGameState>();
+	if (CurrentGameState)
+	{
+		CurrentGameState->bTeamsMatch = bTeamsMatch;
+	}
 }
 
 void ASlipstreamGameMode::OnMatchStateSet()

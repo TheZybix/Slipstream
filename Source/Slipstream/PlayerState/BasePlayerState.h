@@ -30,6 +30,11 @@ public:
 	void AddToDefeat(int32 DefeatAmount);
 
 	void SetTeam(ETeam NewTeam);
+
+	void ShowCharacterOutline(bool bShowOutline);
+
+protected:
+	virtual void BeginPlay() override;
 	
 private:
 	UPROPERTY()

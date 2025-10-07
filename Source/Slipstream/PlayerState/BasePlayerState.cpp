@@ -70,9 +70,24 @@ void ABasePlayerState::SetTeam(ETeam NewTeam)
 	}
 }
 
+void ABasePlayerState::ShowCharacterOutline(bool bShowOutline)
+{
+	PlayerCharacter = PlayerCharacter == nullptr ? Cast<ABasePlayerCharacter>(GetPawn()) : PlayerCharacter;
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->SetCustomDepthStencilForNonLocalPlayers(bShowOutline);
+	}
+}
+
+void ABasePlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+	ShowCharacterOutline(true);
+}
+
 void ABasePlayerState::OnRep_Team()
 {
-
+	
 }
 
 void ABasePlayerState::OnRep_Defeat()

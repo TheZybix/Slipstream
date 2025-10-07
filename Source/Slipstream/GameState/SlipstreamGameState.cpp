@@ -13,6 +13,7 @@ void ASlipstreamGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ASlipstreamGameState, TopScoringPlayers);
 	DOREPLIFETIME(ASlipstreamGameState, RedTeamScore);
 	DOREPLIFETIME(ASlipstreamGameState, BlueTeamScore);
+	DOREPLIFETIME(ASlipstreamGameState, bTeamsMatch);
 }
 
 void ASlipstreamGameState::UpdateTopScore(ABasePlayerState* ScoringPlayer)

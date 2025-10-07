@@ -22,6 +22,9 @@ public:
 	UPROPERTY(Replicated)
 	TArray<ABasePlayerState*> TopScoringPlayers;
 
+	UPROPERTY(Replicated)
+	bool bTeamsMatch = false;
+
 	/* Teams */
 
 	void RedTeamScores();
