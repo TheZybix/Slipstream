@@ -24,7 +24,7 @@
 
 ## Demo
 
-[Gameplay Demo]((https://youtu.be/KwpuWXSm03I))
+[Gameplay Demo](https://youtu.be/KwpuWXSm03I)
 
 ---
 
